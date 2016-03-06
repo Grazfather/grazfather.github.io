@@ -68,7 +68,7 @@ subY = subX + 4
 subRes = subY + 4
 _dl_tls_static_used = 0x6C4AC0
 
-# Builds commands
+# Build commands
 commands = [
     "100\n",  # Any large number
     NULL*18,  # Get to RA

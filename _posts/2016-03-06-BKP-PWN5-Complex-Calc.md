@@ -20,7 +20,7 @@ gdb-peda$ x/4gx $rax - 0x10
 0x6c8bd0:       0x0000000000000000      0x0000000000000000
 {% endhighlight %}
 
-I got lucky in that I already know about about how free works to not have to figure out why the size value is odd: The low bit represents whether or not the allocation is in use. When `free` is called, the bit is set to 0, but also the next block is checked. If that block is also not in use, then the two blocks are coalesced. This is to try to prevent memory fragmentation.
+I got lucky in that I already know about how free works to not have to figure out why the size value is odd: The low bit represents whether or not the allocation is in use. When `free` is called, the bit is set to 0, but also the next block is checked. If that block is also not in use, then the two blocks are coalesced. This is to try to prevent memory fragmentation.
 
 The next block can easily be found by adding the size to the current allocation:
 
@@ -35,10 +35,11 @@ If we want the `free` call to pass, then we are going to need to pass it a point
 Luckily for us, we can do just that: In our last ROP we only needed a few of the global vars (`sub` and `divv`), leaving us `add` and `mul` to fill with allocation metadata. Testing with a valid allocation, I confirmed that garbage data at -0x10 doesn't seem to affect the freeing, making our job easier.
 
 Since the ROP is the same, we should only need a few changes:
+
 1. Instead of writing NULL on the stack, we need to be careful to overwrite the buf pointer with a pointer to our fake allocation.
 2. We need to write two blocks of junk metadata. The first must have a size that is the correct distance away from the second and have the low bit set. The second must only have the low bit set.
 
-I spent _way_ too much time trying to make these metadata blocks contiguous (16 bytes apart), but eventually realized that the minimum distance is the minimum alloc (1) plus the size of the metadata (16) rounded up. Lucky for us, `add` and `mul` are indeed that distance.
+I spent _way_ too much time trying to make these metadata blocks contiguous (16 bytes apart), but eventually realized that the minimum distance is the minimum alloc (1) plus the size of the metadata (16) rounded up. Lucky for us, `add` and `mul` are indeed that distance apart.
 
 I populated the first block by providing two numbers to the app opration whose sum is 0x21. This required a negative number, since there was an unsigned check to ensure the operant is greater than 39.
 
@@ -85,7 +86,7 @@ subY = subX + 4
 subRes = subY + 4
 _dl_tls_static_used = 0x6C4AC0
 
-# Builds commands
+# Build commands
 commands = [
     "100\n",  # Any large number
     write_addr(addX+16)*9,  # Fill stack with address of divX. This will wipe it out :(
