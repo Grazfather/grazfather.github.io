@@ -32,7 +32,7 @@ frida-ps -U|grep ctf
 frida-trace -U -p <pid> -i '*isCorrect*'
 {% endhighlight %}
 
-I spent _way_ more time than I would like to admit here, playing with `Memory.read<X>` trying to read out the arguments and return value, but the problem was that this function is provided a Java string, whose structure I am unfamiliar wit. Part of the complexity of the native functions are surely just getting the C string out of the `String` object, but I didn't feel like figuring that out.
+I spent _way_ more time than I would like to admit here, playing with `Memory.read<X>` trying to read out the arguments and return value, but the problem was that this function is provided a Java string, whose structure I am unfamiliar with. Part of the complexity of the native functions are surely just getting the C string out of the `String` object, but I didn't feel like figuring that out.
 
 If I wanted to see what was going on _easily_ I'd want to find a function that takes C strings, which are easy to read from. Lucky for me, the `isCorrect` function imports `strcmp` from _libc.so_. It can't be that easy... can it?
 

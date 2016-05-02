@@ -21,7 +21,7 @@ After doing that cleanup twice we see a reference to the first string we see "Pl
 
 Continuing to clean as you proceed down, there's a call to `strlen` ensuring the length is 16 bytes. I like to put breakpoints on checks like these and restart the program to validate, but otherwise do most of my work statically.
 
-{% highlight ruby %}
+{% highlight bash %}
 b *0x400A2C
 r
 123456
