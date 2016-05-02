@@ -15,7 +15,9 @@ Popping the jar into JD-GUI, we first peek at the _MainActivity_. Super simple: 
 
 In _Send_to_Activity_'s `onReceive` message we see that it checks the received intent for a string extra named "msg", and uses it to select which activity to send an intent to.
 
-It's in the three activities that are sent to that things get interesting. All three look about the same, with small variations: Get some string, munge it up (using some native functions `computeFlag` and `definitelyNotThis` from _libhello-jki.so_), and then send a broadcast intent with the result. Because it doesn't take any input from us, we can assume that one of these must generated the flag, and it's only a matter of 'catching' the output.
+It's in the three activities that are sent to that where things get interesting. All three look about the same, with small variations: Get some string, munge it up (using some native functions `computeFlag` and `definitelyNotThis` from _libhello-jni.so_), and then send a broadcast intent with the result. Because it doesn't take any input from us, we can assume that one of these must generate the flag, and it's only a matter of 'catching' the output.
+
+![onClick method]({{site.url}}/assets/2016-05-02-Google-CTF-Mobile-150-Ill-Intentions-code.png)
 
 Let's play around to make sure we have the correct understanding of what's going on. Installing the apk on my phone, I opened each of the activities using `am`:
 
@@ -31,7 +33,7 @@ root@A0001:/ # am start -n com.example.hellojni/com.example.application.Definite
 Starting: Intent { cmp=com.example.hellojni/com.example.application.DefinitelyNotThisOne }
 {% endhighlight %}
 
-Although it took longer than I'd like to admit to get the syntax correct in `am`, once I had the above commands, I could switch between the activites with easy. The last three activities render on screen with nothing but a big button. Hitting the button executes the code that computes and broadcasts the flag. Note that we never had to use _Send_to_Activity_. We _could_ have used it just the same:
+Although it took longer than I'd like to admit to get the syntax correct in `am`, once I had the above commands, I could switch between the activites with ease. The last three activities render on screen with nothing but a big button. Tappind the button executes the code that computes and broadcasts the flag. Note that we never had to use _Send_to_Activity_. We _could_ have used it just the same:
 
 {% highlight bash %}
 root@A0001:/ # am broadcast -a com.ctf.INCOMING_INTENT --es msg "IsThisTheRealOne"
@@ -55,11 +57,11 @@ Because I don't feel like writing java (I never do), I'll go with the latter. Th
 
 Now I load up the APK in IDA, navigate to the `onClick` methods in each activity, set a breakpoint, follow the instructions [here](https://www.hex-rays.com/products/ida/support/tutorials/debugging_dalvik.pdf), and start the application in the debugger.
 
-![Breakpoint]({{site.url}}/assets/2016-05-02-Google-CTF-Mobile-150-Ill-Intentions-1.png)
+![Breakpoint]({{site.url}}/assets/2016-05-02-Google-CTF-Mobile-150-Ill-Intentions-bp.png)
 
 Once IDA has connected to the application (just skipping past the auto-set bps), and the app is running, I use `am` again to send one of the intents, then tap on the button that shows up. IDA should break immediately. Now at this point we see that the output of `perhapsThis`, which is fed directly to `putExtra` is stored in `v6`. Opening the 'Watch' view (Debugger -> Debugger windows -> Watch view), I simply created a new watch on `v6` that casts it to `Object *`.
 
-![Flag]({{site.url}}/assets/2016-05-02-Google-CTF-Mobile-150-Ill-Intentions-2.png)
+![Flag]({{site.url}}/assets/2016-05-02-Google-CTF-Mobile-150-Ill-Intentions-flag.png)
 
 (Yes, I got lucky and chose the correct activity on my first try).
 
