@@ -50,7 +50,14 @@ To write to this address, though, I needed to pass the size check, but `secret_m
 
 With a write-what-where primitive I can pretty much do what I want, but I don't know the address of the stack, so I will have to attack the _global offset table_. Here I made it more difficult than I needed, but bear with me.
 
-I know that I needed to leak the address of something in libc, so that I could calculated the offset from there to `system`, and then patch that address into some import's entry in the GOT. My idea was to replace `atoi@got`, which is used in the menu, with the address of `printf@plt`. This would allow me to provide format strings to the menu system to leak addresses on the stack. And added benefit is that I coudl still use the menu, because `printf` returns the number of bytes printed, so to select item 3, for example, it'd just have to pass a string that prints three bytes.
+I know that I needed to leak the address of something in libc, so that I could calculated the offset from there to `system`, and then patch that address into some import's entry in the GOT. My idea was to replace `atoi@got`, which is used in the menu, with the address of `printf@plt`. This would allow me to provide format strings to the menu system to leak addresses on the stack. An added benefit is that I could still use the menu, because `printf` returns the number of bytes printed, so to select item 3, for example, it'd just have to pass a string that prints three bytes.
+
+One interesting thing I noticed about Binary Ninja is that they seem to name some of their symbols incorrectly. When finding the address of `atoi@got`, I got myself pretty confused. What binja labels as `atoi` is _actually_ `atoi@plt`. What they label as `atoi@plt` is `atoi@got.plt`.
+
+![leaking libc]({{site.url}}/assets/2016-08-28-CTFx-Dat-Boinary-atoi_plt_binja.png)
+According to Binary Ninja
+![leaking libc]({{site.url}}/assets/2016-08-28-CTFx-Dat-Boinary-atoi_plt_gdb.png)
+According to GDB.
 
 Inspecting the stack I could see that `__libc_start_main+243` is on the stack, and would be the 23rd element printed. This means that provided the string "%23$X" would print out that address.
 
