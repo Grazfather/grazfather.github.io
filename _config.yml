@@ -1,7 +1,7 @@
 # Site settings
 title: "Grazfather's Blog"
 email: grazfather@gmail.com
-description: "CTF's & Security Research"
+description: "CTFs & Security Research"
 baseurl: ""
 url: "https://grazfather.github.io"
 title_description: "Software engineer/security researcher with a particular interest in reverse engineering, game hacking, and binary exploitation."
