@@ -4,6 +4,7 @@ title:  "My Reading Summary - January 2016"
 date:   2016-02-01 12:00:00 -0800
 categories: books
 ---
+
 **A Game Plan for Life: The Power of Mentoring** - This book was a recommendation from my brother, and I was hesitant to read it just because I had a huge book queue, and I don't care about basketball. I was bored, though, on my flight home from Christmas vacation, so I cracked it open, and I am glad it did. John Wooden, the legendary UCLA basketkall coach, starts off talking about seven people whom he believes were important mentors in his life including some people whom he's never met (like Abraham Lincoln). The second half is not written by him, and instead seven mentorees of his talk about how mentoring has changed their lives. While I normally prefer books that have practical tips or new information, this book inspired me to more actively mentor as well as to seek out better mentors in my life.
 
 **Watchmen** - This graphic novel took me over a year to get through. It wasn't bad my any means, but I just was not enthralled. Having seen the movie, I know the basic plot points, and I just didn't care for the rest of the filler. I think graphical novels just aren't for me.
