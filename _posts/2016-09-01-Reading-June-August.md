@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "My Reading Summary June - August 2016"
+title:  "My Reading Summary - June-August 2016"
 date:   2016-09-01 12:00:00 -0800
 categories: books
 ---
