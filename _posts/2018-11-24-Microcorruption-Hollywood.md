@@ -4,9 +4,9 @@ title:  "Microcorruption Hollywood"
 date:   2018-11-24-12:00:00 -0800
 categories: ctf re
 ---
-I'm a _few_ years late to the party here, but I've recently managed to finish [Microcorruption](http://microcorruption.com). I had finished most of the challenges back in 2015, when they were released, but not having IDA back then, I was stumped when the first relocated challenge showed up, because it broke the online disassembler, and I was helpless without it :).
+I'm a _few_ years late to the party here, but I've recently managed to finish [Microcorruption](http://microcorruption.com). I had finished most of the challenges back in 2014, when they were released, but not having IDA back then, I was stumped when the first challenge that relocated showed up, because it broke the online disassembler, and I was helpless without it :).
 
-I recently picked it up again, having picked up some skill and knowledge in the intervening years. _Hollywood_, the last challenge, was a very interesting challenge, and I found that most writeups I found online glossed over the difficulty of getting something coherent out of it.
+I recently took another look, having picked up some skill and knowledge in the intervening years. _Hollywood_, the last challenge, was a very interesting challenge, and I found that most writeups I found online glossed over the difficulty of getting something coherent out of it, so I figured I would try to add a writeup that goes into more detail.
 
 The challenge is a simple prompt for the password, and the CPU just halts on improper input. Looking at the disassembly output was useless, since the web disassembler just disassembles linearly, and they used jumps to jump over a few, uesless bytes, but these bytes were disassembled as six-byte opcodes, hiding the actual instruction.
 
