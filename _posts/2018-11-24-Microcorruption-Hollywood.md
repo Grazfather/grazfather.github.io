@@ -73,7 +73,7 @@ ROM:00004612 loc_4612:                               ; CODE XREF: sub_4400+20Eâ†
 ROM:00004612                 br      R14             ; Return
 {% endhighlight %}
 
-Reversing these three 'unpackers' showed about the same thing: It would copy some bytes to a random location, decrypt them, and then ultimately jump to them, then finally return and wipe out the instructions - Lucky for me I could see these ephemeral instructions because, remember, I only write _executed_ bytes to the rom file, not written bytes. Whenever a stage of the unpacker was done, it would jump to `eXXX`, where XXX is `rand & 0xFFE`. Because the emulator always returned 0 from the `rand` syscall, this was always exactly `0xe000`. That meant that the few instructions at 0xe000 where just the _last_ few that executed, and I was missing the actual code.
+Reversing these three 'unpackers' showed about the same thing: It would copy some bytes to a random location, decrypt them, and then ultimately jump to them, then finally return and wipe out the instructions - Lucky for me I could see these ephemeral instructions because, remember, I only write _executed_ bytes to the rom file, not written bytes. Whenever a stage of the unpacker was done, it would jump to `eXXX`, where XXX is `rand & 0xFFE`. Because the emulator always returned 0 from the `rand` syscall, this was always exactly `0xe000`. That meant that the few instructions at 0xe000 weere just the _last_ few that executed, and I was missing the actual code.
 
 Taking a step back, I realized that everything I had reversed was only the unpacked. There was no hint of the prompt or the password validation. Staring at this for some time it hit me: This isn't an unpacker, it's more of a VM! A few instructions are unpacked, jumped to, wiped out, and then this is repeated. _Everything_ that mattered was executed at 0xeXXX.
 
@@ -97,6 +97,7 @@ e008   B4E9: 004D      br     R13
 e000   BC7F: B140 6800 0600 mov    #0x68, 0x6(SP)
 e006   BC80: 3C40 9C45 mov    #0x459c, R12
 e00a   BC81: 004D      br     R13
+...
 {% endhighlight %}
 
 That's more fucking like it. The `br R13` is just the return to the unpacker, and the `mov #0xXXXX, R12` was just another address used for unpacking. Filter them out!
@@ -122,11 +123,13 @@ e000  117AB: B140 7400 0600 mov    #0x74, 0x6(SP)
 e000  11F44: B012 1000 call   #0x10
 e000  126DD: B140 6800 0600 mov    #0x68, 0x6(SP)
 e000  12E76: B012 1000 call   #0x10
+...
 {% endhighlight %}
 
-Fuckin' rights buddy. What we are seeing here is the prompt "What's the password?" being printed, one character at a time. After this is the validation:
+What we are seeing here is the prompt "What's the password?" being printed, one character at a time. After this is the validation:
 
 {% highlight asm %}
+...
 B140 0026 0600 mov    #0x2600, 0x6(SP)
 B140 0001 0800 mov    #0x100, 0x8(SP)
 3240 0082      mov    #0x8200, SR
@@ -176,7 +179,7 @@ repeats 8 times {
 {% endhighlight %}
 
 
-Using this filtered output, I got the original bytes and converted them back to a binary: 732 bytes! Running this in the emulator worked! That confirmed that I filtered it down to exactly what I needed.
+Using this filtered output, I got the original bytes and converted them back to a binary that was only 732 bytes and running this in the emulator worked! That confirmed that I filtered it down to exactly what I needed.
 Looking at this tiny assembly it's easy to see what's happening: Two bytes of the input are checked at a time, and they are mixed into R4, R6, and R8. After the loop runs eight times, the value of R4 and R6 is checked, and then the status register is copied to R7, rotated around, and written back to SR. This is why the CPU was halting: The SR was set to some bogus value. We want 0x7F00 in R7 on the last instruction. The comparison to 0xfeb1 sets the status bits, and to preserve them they have to survive the AND with the status register after the comparison to 0x9298. This means that we need R4 and R6 to equal these values after the loop, meaning everything to do with R7 and R8 in the loop is trash!
 
 {% highlight asm %}
