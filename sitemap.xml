@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  
+  <url>
+    <loc>https://grazfather.github.io/categories/</loc>
+    <lastmod>2019-12-08T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/categories/electronics/</loc>
+    <lastmod>2019-12-08T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/categories/fpga/</loc>
+    <lastmod>2019-12-08T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2019-12-08-glitcher/</loc>
+    <lastmod>2019-12-08T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/</loc>
+    <lastmod>2019-12-08T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/</loc>
+    <lastmod>2019-12-08T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/categories/pwn/</loc>
+    <lastmod>2019-12-08T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/categories/re/</loc>
+    <lastmod>2019-12-08T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/categories/ctf/</loc>
+    <lastmod>2018-11-24T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2018-11-24-microcorruption-hollywood/</loc>
+    <lastmod>2018-11-24T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/categories/crypto/</loc>
+    <lastmod>2018-05-06T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2018-05-06-plaid2018-coconut/</loc>
+    <lastmod>2018-05-06T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2018-05-06-plaid2018-macsh/</loc>
+    <lastmod>2018-05-06T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2017-09-03-rhme3-quals-whitebox/</loc>
+    <lastmod>2017-09-03T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/categories/books/</loc>
+    <lastmod>2017-08-15T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2017-08-15-reading-nov-dec-2016/</loc>
+    <lastmod>2017-08-15T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2017-01-22-reading-sept-oct-2016/</loc>
+    <lastmod>2017-01-22T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-11-18-qiwictf-re300_3/</loc>
+    <lastmod>2016-11-18T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-11-06-manual-unpacking/</loc>
+    <lastmod>2016-11-06T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/categories/notes/</loc>
+    <lastmod>2016-11-06T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-10-12-obfuscation-techniques/</loc>
+    <lastmod>2016-10-12T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-09-18-anti-debugging/</loc>
+    <lastmod>2016-09-18T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-09-18-anti-disassembly/</loc>
+    <lastmod>2016-09-18T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/categories/ida/</loc>
+    <lastmod>2016-09-18T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/categories/malware/</loc>
+    <lastmod>2016-09-18T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-09-01-reading-june-august-2016/</loc>
+    <lastmod>2016-09-01T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-08-28-ctfx-dat-boinary/</loc>
+    <lastmod>2016-08-28T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-06-01-reading-april-may-2016/</loc>
+    <lastmod>2016-06-01T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-05-02-google-ctf-mobile-150-ill-intentions/</loc>
+    <lastmod>2016-05-02T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/categories/mobile/</loc>
+    <lastmod>2016-05-02T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-04-01-reading-february-march-2016/</loc>
+    <lastmod>2016-04-01T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-complex-calc/</loc>
+    <lastmod>2016-03-06T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/</loc>
+    <lastmod>2016-03-06T00:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/</loc>
+    <lastmod>2016-02-14T15:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-02-06-sharif-ctf-re150-serial-writeup/</loc>
+    <lastmod>2016-02-06T17:04:23+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-02-01-reading-january-2016/</loc>
+    <lastmod>2016-02-01T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/posts/2016-01-01-reading-2015/</loc>
+    <lastmod>2016-01-01T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/about/</loc>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/pma/</loc>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/tags/</loc>
+  </url>
+  
+</urlset>

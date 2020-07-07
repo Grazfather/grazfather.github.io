@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Sharif CTF 2016 - RE100 ‘Android App’ Writeup 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Sharif CTF 2016 - RE100 ‘Android App’ Writeup</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON FEB 14, 2016 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/ctf">CTF</a>, 
+      
+      <a class="meta" href="/categories/re">RE</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents"></nav>
+    
+    <p>This one I didn&rsquo;t actually solve in time, because I spent too much time trying to a) Use <a href="http://frida.re">frida</a> and b) RE the args to the two import functions.</p>
+<p>Because I am a fan of Frida (first cutting my teeth on it during the 2015 Flare On challenge), I decided I would use it in lieu of a debugger for this challenge (I didn&rsquo;t want to figure out the toolchain to get the lldb client running on my mac).</p>
+<p>Starting with <code>dex2jar</code> I took the apk apart and took a quick peek at the two main classes. They use JNI to call into two functions in the provided dynamic library, and then generate the flag based on result. Because one function seeds the Java code to generate the flag, and the other takes the same input, but only returns success, I spent almost no time in Java land and instead went directly into looking at the native code.</p>
+<p>Loading up the library in IDA, I was a little intimidated because of the unfamiliar ISA and what looked like a parser. I decided to try to do this dynamically, so this is when I decided <code>frida-trace</code> would be my friend.</p>
+<p><img src="/assets/2016-02-14-Sharif-CTF-RE100-Android-App-1.png" alt="No thanks"></p>
+<p>Setting up <code>frida</code> is very straight forward:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">adb install Sharif_CTF.apk
+adb push frida-server /data/local/tmp
+adb shell
+su
+/data/local/tmp/frida-server</code></pre></div>
+<p>I could then instrument the application and play around with it.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">frida-ps -U|grep ctf
+frida-trace -U -p &lt;pid&gt; -i <span style="color:#e6db74">&#39;*isCorrect*&#39;</span></code></pre></div>
+<p>I spent <em>way</em> more time than I would like to admit here, playing with <code>Memory.read&lt;X&gt;</code> trying to read out the arguments and return value, but the problem was that this function is provided a Java string, whose structure I am unfamiliar with. Part of the complexity of the native functions are surely just getting the C string out of the <code>String</code> object, but I didn&rsquo;t feel like figuring that out.</p>
+<p>If I wanted to see what was going on <em>easily</em> I&rsquo;d want to find a function that takes C strings, which are easy to read from. Lucky for me, the <code>isCorrect</code> function imports <code>strcmp</code> from <em>libc.so</em>. It can&rsquo;t be that easy&hellip; can it?</p>
+<p><img src="/assets/2016-02-14-Sharif-CTF-RE100-Android-App-2.png" alt="Calling strcmp"></p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">frida-trace -U -p &lt;pid&gt; -i <span style="color:#e6db74">&#39;*strcmp*&#39;</span></code></pre></div>
+<p>Editing the created <em>strcmp.js</em>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-js" data-lang="js"><span style="color:#a6e22e">onEnter</span><span style="color:#f92672">:</span> <span style="color:#66d9ef">function</span> (<span style="color:#a6e22e">log</span>, <span style="color:#a6e22e">args</span>, <span style="color:#a6e22e">state</span>) {
+    <span style="color:#a6e22e">log</span>(<span style="color:#e6db74">&#34;strcmp(&#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">Memory</span>.<span style="color:#a6e22e">readUtf8String</span>(<span style="color:#a6e22e">args</span>[<span style="color:#ae81ff">0</span>]) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;,&#34;</span> <span style="color:#f92672">+</span>  <span style="color:#a6e22e">Memory</span>.<span style="color:#a6e22e">readUtf8String</span>(<span style="color:#a6e22e">args</span>[<span style="color:#ae81ff">1</span>]) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;)&#34;</span>);
+},
+</code></pre></div>
+<p>And then just hitting &lsquo;Login&rsquo; on the app:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">  <span style="color:#ae81ff">2059</span> ms  strcmp<span style="color:#f92672">(</span>Serial Number,ef57f3fe3cf603c03890ee588878c0ec<span style="color:#f92672">)</span></code></pre></div>
+<p>Now, remember that this isn&rsquo;t the flag, but what is compared against to determine if we have the correct login. We could fake the retval from this function to return true, but that would make the flag generation fail. Instead, just enter &lsquo;ef57f3fe3cf603c03890ee588878c0ec&rsquo; into the prompt, which will be passed to both lib function, which should properly seed the Java code, and see the flag pop out.</p>
+<p><img src="/assets/2016-02-14-Sharif-CTF-RE100-Android-App-3.png" alt="Flag"></p>
+<p>flag: Sharif_CTF{833489ef285e6fa80690099efc5d9c9d}</p>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-02-06-sharif-ctf-re150-serial-writeup/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

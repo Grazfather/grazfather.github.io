@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Plaid CTF 2018 coconut 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Plaid CTF 2018 coconut</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON MAY 6, 2018 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/ctf">CTF</a>, 
+      
+      <a class="meta" href="/categories/re">RE</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents"></nav>
+    
+    <p>First we&rsquo;re given an address to connect to. Upon connecting with <code>nc</code> we see a bunch of (AT&amp;T 🤮) x86_64 assembly, and we are told to delete lines to get under a certain threshold without changing the return value. Easy enough! I backtrack from the last write to eax and trace back until I see its final immediate value being written to the stack. Submit those lines, easy flag.</p>
+<p>Let&rsquo;s look at an example:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#ae81ff">1</span>    .globl    myfunction
+<span style="color:#ae81ff">2</span>    myfunction:
+<span style="color:#ae81ff">3</span>    pushq    %rbp
+<span style="color:#ae81ff">4</span>    movq    %rsp, %rbp
+<span style="color:#ae81ff">5</span>    movl    $-872808834, -20<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">6</span>    movl    $1162927757, -16<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">7</span>    movl    -16<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>, %eax
+<span style="color:#ae81ff">8</span>    movl    -20<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>, %edx
+<span style="color:#ae81ff">9</span>    andl    %edx, %eax
+<span style="color:#ae81ff">10</span>    movl    %eax, -12<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">11</span>    movl    -20<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>, %eax
+<span style="color:#ae81ff">12</span>    movl    %eax, -8<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">13</span>    movl    -16<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>, %eax
+<span style="color:#ae81ff">14</span>    movl    -8<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>, %edx
+<span style="color:#ae81ff">15</span>    andl    %edx, %eax
+<span style="color:#ae81ff">16</span>    movl    %eax, -4<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">17</span>    movl    -4<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>, %eax
+<span style="color:#ae81ff">18</span>    popq    %rbp
+<span style="color:#ae81ff">19</span>    ret</code></pre></div>
+<p>Let&rsquo;s walk through it:</p>
+<ol>
+<li>We see that eax is last written to on line 17, and it gets its value from -4(%rbp), which was written to from line 16, which gets its value from eax. That&rsquo;s redundant, and we know we don&rsquo;t need those.</li>
+<li>Line 15 is now the latest line that writes eax, and it gets its value from edx <em>and</em> from a previous value of eax (since it&rsquo;s an <code>and</code> instruction). We have to fork here and track both variables.</li>
+<li>Following edx, we see it&rsquo;s copied from -8(%rbp) on line 14.</li>
+<li>-8(%rbp) is copied from eax on line 12</li>
+<li>eax was last written to from -20(%rbp) on line 11</li>
+<li>-20(%rbp) was copied <em>from</em> on line 8, but we don&rsquo;t care about that. It was last written <em>to</em> on line 5, and it was an immediate value, so we know we&rsquo;re done this path.</li>
+<li>Going back to line 15, we track eax writes. eax was last written to on line 13, using the value at -16(%rbp).</li>
+<li>-16(%rbp) was last written to on line 6, and it&rsquo;s an immediate, so we&rsquo;re done.</li>
+</ol>
+<p>Now we obviously need the directives (lines 1 and 2), plus the stack setup (lines 3 and 4), plus the return (line 19). Other than these lines, and the lines mentioned above, we can delete everything else! If we submit these line numbers, we should get a flag.</p>
+<p>Congrats! Your flag is PCTF{iN3ffic1eent__A5m_K1ll5}</p>
+<p>Now on to the next one. This one, as expected, is more of the same. Connecting a few times I see that the assembly listing provided changes. @uafio and I try to download all of them and start working on them manually. In 1000 iterations we only found 100 unique assembly listings&hellip; That&rsquo;s reasonable. While working through, though, the sense that this isn&rsquo;t it won&rsquo;t leave me. We&rsquo;ll have to automate this.</p>
+<p>Now I know in theory how this is done. I&rsquo;ve read on <a href="https://en.wikipedia.org/wiki/Static_single_assignment_form">Static single assignment form</a> before. The idea is to re-version every variable every time it&rsquo;s assigned to, and track which version of which variable was used in determining its current value.</p>
+<p>So I start writing code!</p>
+<p>There are many ways about this. I could use something like <a href="http://www.capstone-engine.org/">Capstone engine</a> or binja&rsquo;s new SSA form, but truly I don&rsquo;t think I&rsquo;m going to solve this problem, I just want to understand SSA (plus my binja license has expired and I don&rsquo;t have the latest updates). I decide to parse the instructions using good &lsquo;ol vanilla python. I write some typical fetching/parsing code with <code>pwntools</code>, and think about how to track this.</p>
+<p>From all the challenges I&rsquo;ve collected, there are only a handful of unique instructions. Mostly <code>mov</code>s and arithmetic. All memory accesses are relative to rbp. All register access, other than rbp, is in the extended (32 bit) form. I decide to make it simple: Each register and each offset from rbp is a variable. I can use the name as a key in a dictionary. I can keep track of each version, and for each version, I can track which other variable(s) were used. This gives me a dictionary with a list (or dict) of versions, where for each version I keep a list of which variables were used to determine the new value. I also need to keep track of which line this version was created, so that if the version is relevant, I can make sure to keep the line it shows up on. Here is a nice short sample (using the same code listing as above):</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#f92672">[</span>+<span style="color:#f92672">]</span> Opening connection to coconut.chal.pwning.xxx on port 6817: Done
+<span style="color:#ae81ff">1</span>    .globl    myfunction
+<span style="color:#ae81ff">2</span>    myfunction:
+<span style="color:#ae81ff">3</span>    pushq    %rbp
+<span style="color:#ae81ff">4</span>    movq    %rsp, %rbp
+<span style="color:#ae81ff">5</span>    movl    $-872808834, -20<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">6</span>    movl    $1162927757, -16<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">7</span>    movl    -16<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>, %eax
+<span style="color:#ae81ff">8</span>    movl    -20<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>, %edx
+<span style="color:#ae81ff">9</span>    andl    %edx, %eax
+<span style="color:#ae81ff">10</span>    movl    %eax, -12<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">11</span>    movl    -20<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>, %eax
+<span style="color:#ae81ff">12</span>    movl    %eax, -8<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">13</span>    movl    -16<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>, %eax
+<span style="color:#ae81ff">14</span>    movl    -8<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>, %edx
+<span style="color:#ae81ff">15</span>    andl    %edx, %eax
+<span style="color:#ae81ff">16</span>    movl    %eax, -4<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>
+<span style="color:#ae81ff">17</span>    movl    -4<span style="color:#f92672">(</span>%rbp<span style="color:#f92672">)</span>, %eax
+<span style="color:#ae81ff">18</span>    popq    %rbp
+<span style="color:#ae81ff">19</span>    ret
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#39;%eax&#39;</span>: <span style="color:#f92672">{</span>1: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;[rbp-16]&#39;</span>, 1, <span style="color:#e6db74">&#39;7&#39;</span><span style="color:#f92672">)]</span>,
+          2: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;%eax&#39;</span>, 1, <span style="color:#e6db74">&#39;9&#39;</span><span style="color:#f92672">)</span>, <span style="color:#f92672">(</span><span style="color:#e6db74">&#39;%edx&#39;</span>, 1, <span style="color:#e6db74">&#39;9&#39;</span><span style="color:#f92672">)]</span>,
+          3: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;[rbp-20]&#39;</span>, 1, <span style="color:#e6db74">&#39;11&#39;</span><span style="color:#f92672">)]</span>,
+          4: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;[rbp-16]&#39;</span>, 1, <span style="color:#e6db74">&#39;13&#39;</span><span style="color:#f92672">)]</span>,
+          5: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;%eax&#39;</span>, 4, <span style="color:#e6db74">&#39;15&#39;</span><span style="color:#f92672">)</span>, <span style="color:#f92672">(</span><span style="color:#e6db74">&#39;%edx&#39;</span>, 2, <span style="color:#e6db74">&#39;15&#39;</span><span style="color:#f92672">)]</span>,
+          6: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;[rbp-4]&#39;</span>, 1, <span style="color:#e6db74">&#39;17&#39;</span><span style="color:#f92672">)]</span>,
+          <span style="color:#e6db74">&#39;last&#39;</span>: 6<span style="color:#f92672">}</span>,
+ <span style="color:#e6db74">&#39;%edx&#39;</span>: <span style="color:#f92672">{</span>1: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;[rbp-20]&#39;</span>, 1, <span style="color:#e6db74">&#39;8&#39;</span><span style="color:#f92672">)]</span>, 2: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;[rbp-8]&#39;</span>, 1, <span style="color:#e6db74">&#39;14&#39;</span><span style="color:#f92672">)]</span>, <span style="color:#e6db74">&#39;last&#39;</span>: 2<span style="color:#f92672">}</span>,
+ <span style="color:#e6db74">&#39;[rbp-12]&#39;</span>: <span style="color:#f92672">{</span>1: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;%eax&#39;</span>, 2, <span style="color:#e6db74">&#39;10&#39;</span><span style="color:#f92672">)]</span>, <span style="color:#e6db74">&#39;last&#39;</span>: 1<span style="color:#f92672">}</span>,
+ <span style="color:#e6db74">&#39;[rbp-16]&#39;</span>: <span style="color:#f92672">{</span>1: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;$1162927757&#39;</span>, 0, <span style="color:#e6db74">&#39;6&#39;</span><span style="color:#f92672">)]</span>, <span style="color:#e6db74">&#39;last&#39;</span>: 1<span style="color:#f92672">}</span>,
+ <span style="color:#e6db74">&#39;[rbp-20]&#39;</span>: <span style="color:#f92672">{</span>1: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;$-872808834&#39;</span>, 0, <span style="color:#e6db74">&#39;5&#39;</span><span style="color:#f92672">)]</span>, <span style="color:#e6db74">&#39;last&#39;</span>: 1<span style="color:#f92672">}</span>,
+ <span style="color:#e6db74">&#39;[rbp-4]&#39;</span>: <span style="color:#f92672">{</span>1: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;%eax&#39;</span>, 5, <span style="color:#e6db74">&#39;16&#39;</span><span style="color:#f92672">)]</span>, <span style="color:#e6db74">&#39;last&#39;</span>: 1<span style="color:#f92672">}</span>,
+ <span style="color:#e6db74">&#39;[rbp-8]&#39;</span>: <span style="color:#f92672">{</span>1: <span style="color:#f92672">[(</span><span style="color:#e6db74">&#39;%eax&#39;</span>, 3, <span style="color:#e6db74">&#39;12&#39;</span><span style="color:#f92672">)]</span>, <span style="color:#e6db74">&#39;last&#39;</span>: 1<span style="color:#f92672">}}</span></code></pre></div>
+<p>We see that there are six version of eax. Looking at the sixth version, we see that it used <code>[rbp-4]</code> to determine its new value (and not an old version of itself!), it used version 1 of that variable, and that happened on line 17. Looking at line 17 we can clearly see this is the case! Now going to the only version of <code>[rbp-4]</code>, we see that it was written from a previous value of eax! We can track this back until we fully exhaust all paths. If we keep track of the lines these occurred on, then we know all of the lines that matter! The astute reader will notice that tracking back in this way is not necessarily optimal: Looking at the last two versions of eax, we see that it&rsquo;s a useless write to <code>[rbp-4]</code>, since it&rsquo;s immediately read back and we don&rsquo;t prune this! Luckily, though, that was not an issue, as my tactic seems to always prune enough to get within the required threshold.</p>
+<p>Here&rsquo;s some pseudo code for how to build this dictionary:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">for</span> line <span style="color:#f92672">in</span> code:
+    get src(s), dest, <span style="color:#f92672">and</span> line number <span style="color:#f92672">from</span> line text
+    newver <span style="color:#f92672">=</span> dest<span style="color:#f92672">.</span>lastver <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
+    update dest<span style="color:#f92672">.</span>lastver
+    <span style="color:#66d9ef">for</span> each src:
+        dest[newver]<span style="color:#f92672">.</span>prereqs<span style="color:#f92672">.</span>append(src)</code></pre></div>
+<p>The back-tracking algorithm is a simple <a href="https://en.wikipedia.org/wiki/Depth-first_search">DFS</a>. We track all the versions of all variables we need to visit in a queue, starting with the last version of eax (since this is the one that acts as the return value). From this first var we enqueue all variables that were used to determine this value, and repeat until this queue is empty. When we hit an immediate value, which has no prereq, we&rsquo;ve exhausted this particular path. When the queue is completely empty, we&rsquo;re built up a nice set of line numbers that are required to build this path, and we simply tell the server to delete everything else! This is exactly how I manually loved the first listing above!</p>
+<p>Here&rsquo;s some more pseudocode:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">queue <span style="color:#f92672">=</span> [last version of eax]
+<span style="color:#66d9ef">while</span> there are items <span style="color:#f92672">in</span> the queue:
+    current <span style="color:#f92672">=</span> queue<span style="color:#f92672">.</span>dequeue()
+    <span style="color:#66d9ef">for</span> each var that <span style="color:#f92672">is</span> used <span style="color:#f92672">in</span> cur:
+        queue<span style="color:#f92672">.</span>enqueue(var)
+    mark current <span style="color:#66d9ef">as</span> important</code></pre></div>
+<p>At this point my code was miraculously solving a few rounds, but I hit a snag. Turns out every five rounds they add a few instructions, and my original naive code only checked for a <code>mov</code>, <code>and</code>, and maybe a few others. While the debugging wasn&rsquo;t super fun, it mostly just involved finding the problematic instruction and making sure we properly handle it, meaning we correctly parse out the destination and sources, and revision the destination. There were instructions like <code>imull</code> which has a 3-op form, and <code>leal</code>, which has what looks like a memory access but actually isn&rsquo;t, these needed special handling.</p>
+<p>With eight hours to go in the CTF my brain was dying and I still had a bug I could not figure out. My code was only passing about 15 rounds, and I had no idea how many total were needed to get the flag. I made the wise decision to go to bed.</p>
+<p>I woke up again after seven hours, and with a clearer head (and a revealing question from @vakzz) I was able to spot my bug! For certain instructions, e.g. <code>xor</code>, the destination is <em>also</em> a source. I needed to make sure that new version of some variable marked the old version as a prereq! I had this correct for <code>and</code> but not for others. Advice: If you&rsquo;re tired and batting your head against a problem, take a nap.</p>
+<p>With this fixed, it was just a matter of cleaning my script up to make it reliable, and making sure to get the flag when the server finally spits it out.</p>
+<p>Don&rsquo;t judge my code too much! I hope it&rsquo;s easy to understand.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> sys
+<span style="color:#f92672">import</span> re
+<span style="color:#f92672">from</span> pprint <span style="color:#f92672">import</span> pprint
+
+<span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+vars <span style="color:#f92672">=</span> {}
+
+<span style="color:#66d9ef">class</span> <span style="color:#a6e22e">dummyremote</span>:
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">recv</span>(self): <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;&#34;</span>
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">recvline</span>(self): <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;&#34;</span>
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">recvuntil</span>(self, s, <span style="color:#f92672">**</span>kwargs): <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;&#34;</span>
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">send</span>(self, s): <span style="color:#66d9ef">print</span> s
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">sendline</span>(self, s): <span style="color:#66d9ef">print</span> s
+    <span style="color:#66d9ef">def</span> <span style="color:#a6e22e">interactive</span>(self): <span style="color:#66d9ef">pass</span>
+
+<span style="color:#66d9ef">if</span> len(sys<span style="color:#f92672">.</span>argv) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span>:
+    r <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#39;coconut.chal.pwning.xxx&#39;</span>, <span style="color:#ae81ff">6817</span>)
+<span style="color:#66d9ef">else</span>:
+    r <span style="color:#f92672">=</span> dummyremote()
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">get_newver</span>(var):
+    <span style="color:#66d9ef">if</span> dest <span style="color:#f92672">not</span> <span style="color:#f92672">in</span> vars:
+        vars[dest] <span style="color:#f92672">=</span> {
+            <span style="color:#e6db74">&#34;last&#34;</span>: <span style="color:#ae81ff">1</span>
+        }
+        newver <span style="color:#f92672">=</span> <span style="color:#ae81ff">1</span>
+    <span style="color:#66d9ef">else</span>:
+        newver <span style="color:#f92672">=</span> vars[dest][<span style="color:#e6db74">&#34;last&#34;</span>] <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
+        vars[dest][<span style="color:#e6db74">&#34;last&#34;</span>] <span style="color:#f92672">=</span> newver
+    <span style="color:#66d9ef">return</span> newver
+
+buf <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;&#34;</span>
+success <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+<span style="color:#66d9ef">while</span> True:
+    <span style="color:#66d9ef">if</span> len(sys<span style="color:#f92672">.</span>argv) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span>: <span style="color:#75715e"># Add random arg to connect to remote</span>
+        r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;Function to optimize:</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#39;</span>)
+
+        challenge <span style="color:#f92672">=</span> r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#39;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&lt;&lt;&lt;EOF&gt;&gt;&gt;&#39;</span>, drop<span style="color:#f92672">=</span>True)
+        r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Note:&#34;</span>)
+    <span style="color:#66d9ef">else</span>:
+        <span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;bla&#34;</span>, <span style="color:#e6db74">&#34;r&#34;</span>) <span style="color:#66d9ef">as</span> f:
+            challenge <span style="color:#f92672">=</span> f<span style="color:#f92672">.</span>read()
+
+    <span style="color:#75715e"># print challenge</span>
+    code <span style="color:#f92672">=</span> challenge<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+
+    seenlines <span style="color:#f92672">=</span> set()
+    <span style="color:#66d9ef">for</span> ins <span style="color:#f92672">in</span> code:
+        <span style="color:#66d9ef">if</span> ins <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;&#34;</span>:
+            <span style="color:#66d9ef">continue</span>
+        line, ins <span style="color:#f92672">=</span> ins<span style="color:#f92672">.</span>rstrip()<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\t</span><span style="color:#e6db74">&#34;</span>, <span style="color:#ae81ff">1</span>)
+        <span style="color:#75715e"># Prologue instructions must remain</span>
+        <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#34;leave&#34;</span> <span style="color:#f92672">in</span> ins <span style="color:#f92672">or</span> <span style="color:#e6db74">&#34;movq&#34;</span> <span style="color:#f92672">in</span> ins <span style="color:#f92672">or</span> <span style="color:#e6db74">&#34;globl&#34;</span> <span style="color:#f92672">in</span> ins <span style="color:#f92672">or</span> <span style="color:#e6db74">&#34;myfunction&#34;</span> <span style="color:#f92672">in</span> ins <span style="color:#f92672">or</span> <span style="color:#e6db74">&#34;push&#34;</span> <span style="color:#f92672">in</span> ins <span style="color:#f92672">or</span> <span style="color:#e6db74">&#34;pop&#34;</span> <span style="color:#f92672">in</span> ins <span style="color:#f92672">or</span> <span style="color:#e6db74">&#34;ret&#34;</span> <span style="color:#f92672">in</span> ins <span style="color:#f92672">or</span> <span style="color:#e6db74">&#34;subq&#34;</span> <span style="color:#f92672">in</span> ins:
+            seenlines<span style="color:#f92672">.</span>add(line) <span style="color:#75715e"># So that we do not remove prologue/epilogue</span>
+            <span style="color:#66d9ef">continue</span>
+
+        op, args <span style="color:#f92672">=</span> ins<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\t</span><span style="color:#e6db74">&#34;</span>, <span style="color:#ae81ff">1</span>)
+        args <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#34;,&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>)
+
+        <span style="color:#66d9ef">try</span>:
+            src, dest <span style="color:#f92672">=</span> args<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34; &#34;</span>, <span style="color:#ae81ff">1</span>)
+        <span style="color:#66d9ef">except</span>: <span style="color:#75715e"># unary ops, where src is dest</span>
+            dest <span style="color:#f92672">=</span> args
+            src <span style="color:#f92672">=</span> dest
+
+        <span style="color:#66d9ef">if</span> re<span style="color:#f92672">.</span>match(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;-?\d+\(&#34;</span>, dest): <span style="color:#75715e"># Mem access, assumed rbp offset</span>
+            dest <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;[rbp&#34;</span><span style="color:#f92672">+</span>dest<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;(&#34;</span>)[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;]&#34;</span>
+        <span style="color:#66d9ef">if</span> re<span style="color:#f92672">.</span>match(<span style="color:#e6db74">r</span><span style="color:#e6db74">&#34;-?\d+\(&#34;</span>, src):
+            src <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;[rbp&#34;</span><span style="color:#f92672">+</span>src<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;(&#34;</span>)[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;]&#34;</span>
+
+        newver <span style="color:#f92672">=</span> get_newver(dest)
+        <span style="color:#66d9ef">if</span> op <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;movl&#34;</span>:
+            <span style="color:#66d9ef">if</span> src <span style="color:#f92672">in</span> vars:
+                vars[dest][newver] <span style="color:#f92672">=</span> [(src, vars[src][<span style="color:#e6db74">&#34;last&#34;</span>], line)]
+            <span style="color:#66d9ef">elif</span> <span style="color:#e6db74">&#34;$&#34;</span> <span style="color:#f92672">in</span> src:
+                vars[dest][newver] <span style="color:#f92672">=</span> [(src, <span style="color:#ae81ff">0</span>, line)]
+        <span style="color:#66d9ef">elif</span> op <span style="color:#f92672">in</span> {<span style="color:#e6db74">&#34;xorl&#34;</span>, <span style="color:#e6db74">&#34;andl&#34;</span>, <span style="color:#e6db74">&#34;imull&#34;</span>, <span style="color:#e6db74">&#34;addl&#34;</span>, <span style="color:#e6db74">&#34;orl&#34;</span>, <span style="color:#e6db74">&#34;subl&#34;</span>}:
+            <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#34; &#34;</span> <span style="color:#f92672">in</span> dest: <span style="color:#75715e"># A 3-arg imull</span>
+                dest <span style="color:#f92672">=</span> dest<span style="color:#f92672">.</span>split()[<span style="color:#ae81ff">0</span>]
+                newver <span style="color:#f92672">=</span> get_newver(dest) <span style="color:#75715e"># The extra newver above, versioning a bogus var is harmless</span>
+                <span style="color:#75715e"># Assuming always the same two regs for src and dest1</span>
+                vars[dest][newver] <span style="color:#f92672">=</span> [(dest, vars[dest][<span style="color:#e6db74">&#34;last&#34;</span>]<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, line), (src, <span style="color:#ae81ff">0</span>, line)]
+            <span style="color:#66d9ef">elif</span> <span style="color:#e6db74">&#34;$&#34;</span> <span style="color:#f92672">not</span> <span style="color:#f92672">in</span> src:
+                vars[dest][newver] <span style="color:#f92672">=</span> [(dest, vars[dest][<span style="color:#e6db74">&#34;last&#34;</span>]<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, line), (src, vars[src][<span style="color:#e6db74">&#34;last&#34;</span>], line)]
+            <span style="color:#66d9ef">else</span>:
+                vars[dest][newver]  <span style="color:#f92672">=</span> [(dest, vars[dest][<span style="color:#e6db74">&#34;last&#34;</span>]<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, line), (src, <span style="color:#ae81ff">0</span>, line)]
+        <span style="color:#66d9ef">elif</span> op <span style="color:#f92672">in</span> {<span style="color:#e6db74">&#34;notl&#34;</span>}:
+            vars[src][newver]  <span style="color:#f92672">=</span> [(dest, vars[dest][<span style="color:#e6db74">&#34;last&#34;</span>]<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>, line)]
+        <span style="color:#66d9ef">elif</span> op <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;leal&#34;</span>:
+            <span style="color:#66d9ef">try</span>:
+                <span style="color:#75715e"># leal (%rdx,%rax)</span>
+                op1, op2 <span style="color:#f92672">=</span> src<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#34;)&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>)<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#34;(%&#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>)<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;%&#34;</span>)
+                op1 <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%e</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> op1[<span style="color:#ae81ff">1</span>:] <span style="color:#75715e"># rdx -&gt; edx</span>
+                op2 <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%e</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> op2[<span style="color:#ae81ff">1</span>:]
+                vars[dest][newver] <span style="color:#f92672">=</span> [(op1, vars[op1][<span style="color:#e6db74">&#34;last&#34;</span>], line), (op2, vars[op2][<span style="color:#e6db74">&#34;last&#34;</span>], line)]
+            <span style="color:#66d9ef">except</span>:
+                <span style="color:#75715e"># leal 1(%rax)</span>
+                <span style="color:#75715e"># HACK: The src is already trashed by the regex looking for mem access. Just assume eax</span>
+                src <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%e</span><span style="color:#e6db74">ax&#34;</span>
+                vars[dest][newver] <span style="color:#f92672">=</span> [(src, vars[src][<span style="color:#e6db74">&#34;last&#34;</span>], line)]
+        <span style="color:#66d9ef">else</span>:
+            <span style="color:#66d9ef">print</span> ins
+            <span style="color:#66d9ef">print</span> <span style="color:#e6db74">&#34;UNKNOWN OPCODE&#34;</span>
+
+    <span style="color:#75715e"># pprint(vars)</span>
+    <span style="color:#75715e"># log.info(&#34;Done SSA&#34;)</span>
+
+    <span style="color:#75715e"># Now track back from the newest eax</span>
+    last <span style="color:#f92672">=</span> vars[<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%e</span><span style="color:#e6db74">ax&#34;</span>][<span style="color:#e6db74">&#34;last&#34;</span>]
+    cur, cur_ver, line <span style="color:#f92672">=</span> vars[<span style="color:#e6db74">&#34;</span><span style="color:#e6db74">%e</span><span style="color:#e6db74">ax&#34;</span>][last][<span style="color:#ae81ff">0</span>]
+    <span style="color:#75715e"># print cur, cur_ver, line</span>
+    needed <span style="color:#f92672">=</span> [(cur, cur_ver, line)]
+    seen <span style="color:#f92672">=</span> {(cur, cur_ver, line)}
+
+    <span style="color:#66d9ef">while</span> needed:
+        <span style="color:#75715e"># Pop from needed</span>
+        cur, cur_ver, line <span style="color:#f92672">=</span> needed[<span style="color:#ae81ff">0</span>]
+        needed <span style="color:#f92672">=</span> needed[<span style="color:#ae81ff">1</span>:]
+
+        <span style="color:#75715e"># Queue up its prereqs</span>
+        <span style="color:#66d9ef">for</span> op <span style="color:#f92672">in</span> vars[cur][cur_ver]:
+            cur, cur_ver, line <span style="color:#f92672">=</span> op
+            <span style="color:#66d9ef">if</span> (cur, cur_ver, line) <span style="color:#f92672">not</span> <span style="color:#f92672">in</span> seen:
+                seen<span style="color:#f92672">.</span>add((cur, cur_ver, line))
+                <span style="color:#75715e"># print cur, cur_ver, line</span>
+                <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#34;$&#34;</span> <span style="color:#f92672">not</span> <span style="color:#f92672">in</span> cur: <span style="color:#75715e"># Immediate</span>
+                    needed<span style="color:#f92672">.</span>append((cur, cur_ver, line))
+
+    <span style="color:#75715e"># log.info(&#34;Done backtrace&#34;)</span>
+
+    seenlines <span style="color:#f92672">=</span> seenlines<span style="color:#f92672">.</span>union({_[<span style="color:#ae81ff">2</span>] <span style="color:#66d9ef">for</span> _ <span style="color:#f92672">in</span> seen})
+    loc <span style="color:#f92672">=</span> code[<span style="color:#ae81ff">4</span>:<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>][:]
+    i <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+    first <span style="color:#f92672">=</span> None
+    prev <span style="color:#f92672">=</span> None
+    <span style="color:#66d9ef">while</span> i <span style="color:#f92672">&lt;</span> len(loc):
+        start <span style="color:#f92672">=</span> int(loc[i]<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\t</span><span style="color:#e6db74">&#34;</span>)[<span style="color:#ae81ff">0</span>])
+        <span style="color:#66d9ef">if</span> str(start) <span style="color:#f92672">not</span> <span style="color:#f92672">in</span> seenlines:
+            <span style="color:#66d9ef">while</span> i <span style="color:#f92672">&lt;</span> len(loc) <span style="color:#f92672">and</span> loc[i]<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\t</span><span style="color:#e6db74">&#34;</span>)[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">not</span> <span style="color:#f92672">in</span> seenlines:
+                end <span style="color:#f92672">=</span> int(loc[i]<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\t</span><span style="color:#e6db74">&#34;</span>)[<span style="color:#ae81ff">0</span>])
+                i <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+            <span style="color:#66d9ef">if</span> start <span style="color:#f92672">!=</span> end:
+                r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;{}-{}&#34;</span><span style="color:#f92672">.</span>format(start, end))
+            <span style="color:#66d9ef">else</span>:
+                r<span style="color:#f92672">.</span>sendline(str(start))
+        i <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;#&#34;</span>)
+
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Running...</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+    buf <span style="color:#f92672">=</span> r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;Result:&#34;</span>, timeout<span style="color:#f92672">=</span><span style="color:#ae81ff">1</span>)
+    buf <span style="color:#f92672">+=</span> r<span style="color:#f92672">.</span>recvline()<span style="color:#f92672">.</span>rstrip()
+
+    <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#34;Success&#34;</span> <span style="color:#f92672">in</span> buf:
+        success <span style="color:#f92672">+=</span> <span style="color:#ae81ff">1</span>
+    <span style="color:#66d9ef">else</span>:
+        <span style="color:#75715e"># For post-mortem</span>
+        <span style="color:#66d9ef">with</span> open(<span style="color:#e6db74">&#34;bla&#34;</span>, <span style="color:#e6db74">&#34;w&#34;</span>) <span style="color:#66d9ef">as</span> f:
+            f<span style="color:#f92672">.</span>write(challenge)
+    <span style="color:#66d9ef">print</span> buf <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;: &#34;</span> <span style="color:#f92672">+</span> str(success)
+    <span style="color:#66d9ef">if</span> success <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">55</span>:
+        <span style="color:#66d9ef">print</span> r<span style="color:#f92672">.</span>recv()
+        r<span style="color:#f92672">.</span>close()
+        <span style="color:#66d9ef">break</span></code></pre></div>
+<p>Congrats! Your flag is PCTF{Y0u_Just_Imp!em3nt3D_A_LLVM_pass!}</p>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2018-05-06-plaid2018-macsh/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2018-11-24-microcorruption-hollywood/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

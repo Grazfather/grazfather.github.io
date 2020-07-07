@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - RHME3 Quals - Whitebox 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">RHME3 Quals - Whitebox</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON SEP 3, 2017 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/crypto">CRYPTO</a>, 
+      
+      <a class="meta" href="/categories/ctf">CTF</a>, 
+      
+      <a class="meta" href="/categories/re">RE</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents"></nav>
+    
+    <p>Crypto is certainly not my specialty but this is an &lsquo;automotive ctf&rsquo;, and working in the industry it became a pride point for me to solve this.</p>
+<p>You&rsquo;re provided a binary that reads 16 bytes of input and encrypts it with a hardcoded key. It doesn&rsquo;t take a lot of looking at it to recognize that it&rsquo;s (probably) AES. You can, for example, provide shorter input and see that the output is 16 bytes regardless, or change only one byte and see that the entire output changes, to prove that it&rsquo;s a block cipher.</p>
+<p>There&rsquo;s some <em>simple</em> control flow flattening that slows down reverse engineering a little bit, but the real wrench is that the key is somehow embedded into the algorithm.</p>
+<p><img src="/assets/2017-09-03-RHME3-Quals-Whitebox-encrypt-ida-graph.png" alt="graph overview"></p>
+<p>The way I get around the CFF is I simply set a break on the switch case dispatch dispatch and follow the first jump, and then at the end of each &lsquo;case&rsquo; I label the next case based on the value set in the flow flag. My buddy uafio has a great video explaining how to figure out the more intense clang CFF, so I suggest you take a look <a href="https://www.youtube.com/watch?v=Tl29oPwGgYs">here</a>.</p>
+<p>Once I had a basic idea for how it worked I was able to confirm the algorithm as AES by identifying certain steps outlined in the <a href="https://en.wikipedia.org/wiki/Advanced_Encryption_Standard#Description_of_the_cipher">algorithm</a>, for example seeing ten rounds of the <em>shiftrows</em> steps (which also confirms the keysize is 128 bits). Still, the SubBytes table was not the normal one, and the other steps were hard to map to parts of the code.</p>
+<p>A fruitless attempt I made was to walk through each step of each round of the crypto, trying to identify if I could figure out specific bytes of the key by which bytes changed in the data. This did not get me too much farther along in figuring out the key, but it did really help me get a good understanding of how AES works. One indispensible tool in this was this <a href="https://github.com/rwg/aes-horror-shows/tree/master/postscript">postscript script</a> that shows the result of every single step in every round, from plain text and key down to the final ciphertext.</p>
+<p><img src="/assets/2017-09-03-RHME3-Quals-Whitebox-aes-visualization.png" alt="aes visualization"></p>
+<p>At some point it dawned on me that &ldquo;<strong>whitebox</strong>&rdquo;, the challenge name, might mean something, and that&rsquo;s when I dove into the papers. The most useful papers I found on, appropriately, whiteboxcrypto.com. I read a handful of good papers, including a <a href="http://phrack.org/issues/68/8.html#article">phrack article</a>, but it was the <a href="https://eprint.iacr.org/2015/753.pdf">paper</a> by some guys from NXP and Quarks Lab that really unlocked it for me.</p>
+<p>How did it unlock it for me? While it was a well written article and I got the idea, I&rsquo;m still dumb and didn&rsquo;t know how to determine at which points to take measurements, or just in general how to use any measures I could make. Luckily they provide a <a href="https://github.com/SideChannelMarvels/Tracer">tool</a> that utilizes Valgrind or Intel PIN to instrument a binary and traces memory reads, writes, and executions, along with a tool that nicely visualizes it. I set it up (choosing Valgrind to instrument) and, once I constrained understand what the memory region constraints meant (they constrain the code segments that are active for, not which memory regions they trace), I was able to see some cool visualizations of what was happening. Below, for example, you can clearly see the ten rounds of <em>shiftrows</em>.</p>
+<p><img src="/assets/2017-09-03-RHME3-Quals-Whitebox-aes-memory-trace.png" alt="memory trace"></p>
+<p>This was cool, but it didn&rsquo;t solve anything for me, I still had a bunch of data I didn&rsquo;t know how to translate to a key.</p>
+<p>A bit more playing around and reading led me to another one of their projects called <a href="https://github.com/SideChannelMarvels/Daredevil">Daredevil</a>, which is some kind of magic. There is another project, <a href="https://github.com/SideChannelMarvels/Deadpool">Deadpool</a> with a bunch of examples of its use plus a bunch of helper scripts.</p>
+<p>I went through the examples until I found one that seemed suitably similar and basically just had to rewrite two functions, to &lsquo;shape&rsquo; the input and output into a form it can handle and gave it a run:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">➜  DCA git:<span style="color:#f92672">(</span>master<span style="color:#f92672">)</span> ✗ python trace_it.py
+<span style="color:#ae81ff">00000</span> F746E994FE04B79D7002734057868641 -&gt; 8A9AB1CEFD6AAEAAA0BAF5CB34E5DCB8
+<span style="color:#ae81ff">00001</span> 9770F3A54E25A2D63A1B32366F74875E -&gt; 4C92744102E322A45F4A1E6460FC57BD
+<span style="color:#ae81ff">00002</span> C4B3A5FE48BA8D49712A8EF3C5F5DF06 -&gt; CB7CCD1DD1497EA4120D27FDA868F566
+<span style="color:#ae81ff">00003</span> 9BD0520D814F780534D06F806BA09776 -&gt; E3677ADADCE9599CA6D4895924CF96F1
+<span style="color:#ae81ff">00004</span> 4CD98EFA2CD34C81DA91BB67CDBFE0C2 -&gt; 0DA2C69CBED6C6FA5D28740552817442
+...
+➜  DCA git:<span style="color:#f92672">(</span>master<span style="color:#f92672">)</span> ✗ daredevil -c mem_addr1_rw1_64_48696.attack_sbox.config
+
+<span style="color:#f92672">[</span>CONFIGURATION<span style="color:#f92672">]</span>
+...
+<span style="color:#f92672">[</span>/CONFIGURATION<span style="color:#f92672">]</span>
+
+<span style="color:#f92672">[</span>INFO<span style="color:#f92672">]</span> File LUT/AES_AFTER_SBOX not found, using /usr/local/share/daredevil/LUT/AES_AFTER_SBOX instead.
+<span style="color:#f92672">[</span>INFO<span style="color:#f92672">]</span> Lookup table specified at LUT/AES_AFTER_SBOX
+
+<span style="color:#f92672">[</span>ATTACK<span style="color:#f92672">]</span> Computing 1-order correlations...
+<span style="color:#f92672">[</span>ATTACK<span style="color:#f92672">]</span> Key byte number <span style="color:#ae81ff">0</span>
+
+<span style="color:#f92672">[</span>ATTACK<span style="color:#f92672">]</span> Target bit number <span style="color:#ae81ff">0</span>
+
+...
+
+Most probable key max<span style="color:#f92672">(</span>abs<span style="color:#f92672">)</span>:
+1: 16: 61316c5f7434623133355f525f6f5235
+2: 15.6891: 61076c5f7434623133355f525f6f5235
+3: 15.6888: 6131385f7434623133355f525f6f5235
+4: 15.6875: 61316c0d7434623133355f525f6f5235
+5: 15.6872: 61316c5f7434953133355f525f6f5235
+6: 15.378: 6107385f7434623133355f525f6f5235
+7: 15.3766: 61076c0d7434623133355f525f6f5235
+8: 15.3763: 6131380d7434623133355f525f6f5235
+9: 15.3763: 61076c5f7434953133355f525f6f5235
+10: 15.376: 6131385f7434953133355f525f6f5235
+<span style="color:#f92672">[</span>INFO<span style="color:#f92672">]</span> Total attack of file LUT/AES_AFTER_SBOX <span style="color:#66d9ef">done</span> in 134.893164 seconds.
+
+➜  DCA git:<span style="color:#f92672">(</span>master<span style="color:#f92672">)</span> ✗ python -c <span style="color:#e6db74">&#34;print &#39;61316c5f7434623133355f525f6f5235&#39;.decode(&#39;hex&#39;)&#34;</span>
+a1l_t4b135_R_oR5</code></pre></div>
+<p>Below is my script</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python</span>
+
+<span style="color:#f92672">import</span> sys
+sys<span style="color:#f92672">.</span>path<span style="color:#f92672">.</span>insert(<span style="color:#ae81ff">0</span>, <span style="color:#e6db74">&#39;../../&#39;</span>)
+<span style="color:#f92672">from</span> deadpool_dca <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">processinput</span>(iblock, blocksize):
+    <span style="color:#66d9ef">try</span>:
+        <span style="color:#66d9ef">return</span> (hex(iblock)[<span style="color:#ae81ff">2</span>:<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]<span style="color:#f92672">.</span>rjust(<span style="color:#ae81ff">32</span>, <span style="color:#e6db74">&#34;0&#34;</span>)<span style="color:#f92672">.</span>decode(<span style="color:#e6db74">&#39;hex&#39;</span>), [<span style="color:#e6db74">&#34;--stdin&#34;</span>])
+    <span style="color:#66d9ef">except</span>:
+        <span style="color:#f92672">import</span> pdb; pdb<span style="color:#f92672">.</span>set_trace()
+        <span style="color:#66d9ef">return</span> None
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">processoutput</span>(output, blocksize):
+    output <span style="color:#f92672">=</span> output<span style="color:#f92672">.</span>replace(<span style="color:#e6db74">&#34; &#34;</span>, <span style="color:#e6db74">&#34;&#34;</span>)<span style="color:#f92672">.</span>rstrip()
+    <span style="color:#66d9ef">return</span> int(output, <span style="color:#ae81ff">16</span>)
+
+T<span style="color:#f92672">=</span>TracerGrind(<span style="color:#e6db74">&#39;../target/wb_challenge&#39;</span>, processinput, processoutput, ARCH<span style="color:#f92672">.</span>amd64, <span style="color:#ae81ff">16</span>)
+T<span style="color:#f92672">.</span>run(<span style="color:#ae81ff">64</span>) <span style="color:#75715e"># Number of runs. Raise if it doesn&#39;t work</span>
+bin2daredevil(configs<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#39;attack_sbox&#39;</span>:   {<span style="color:#e6db74">&#39;algorithm&#39;</span>:<span style="color:#e6db74">&#39;AES&#39;</span>, <span style="color:#e6db74">&#39;position&#39;</span>:<span style="color:#e6db74">&#39;LUT/AES_AFTER_SBOX&#39;</span>},
+                       <span style="color:#e6db74">&#39;attack_multinv&#39;</span>:{<span style="color:#e6db74">&#39;algorithm&#39;</span>:<span style="color:#e6db74">&#39;AES&#39;</span>, <span style="color:#e6db74">&#39;position&#39;</span>:<span style="color:#e6db74">&#39;LUT/AES_AFTER_MULTINV&#39;</span>}})</code></pre></div>
+<p>Note how in the end I needed to know almost <em>NOTHING</em> about the binary, only how it expects input (and it provided a <code>--stdin</code> option, which was convenient), prints its output, and that it implements AES-128. All props go to the guys who made these tools.</p>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2017-08-15-reading-nov-dec-2016/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2018-05-06-plaid2018-macsh/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

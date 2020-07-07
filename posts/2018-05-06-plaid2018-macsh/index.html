@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Plaid CTF 2018 macsh 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Plaid CTF 2018 macsh</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON MAY 6, 2018 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/crypto">CRYPTO</a>, 
+      
+      <a class="meta" href="/categories/ctf">CTF</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents"></nav>
+    
+    <p>For this challenge we&rsquo;re given a network address where we can access what looks like a simple shell, and the source code to this shell, which is thankfully python code.</p>
+<p>Looking at <em>macsh.py</em> we see a set of commands, some of which are privileged. We can <code>echo</code> without privilege, and <code>tag</code>. What&rsquo;s <code>tag</code>?</p>
+<p>Looking at the tag implementation, it looks like it creates and prints the MAC of the specified args, <strong>as long as the args don&rsquo;t start with a priveleged command</strong>. Looking at the command parsing, it looks like commands are expected to come in the format <code>TAG&lt;|&gt;COMMAND</code>, and the command will not execute unless the tag matches the mac of the command. The <code>tag</code> command, however, skips the check.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ nc macsh.chal.pwning.xxx <span style="color:#ae81ff">64791</span>
+|$|&gt; &lt;|&gt;tag hello world
+3c3ddeeb2e5c6d7f06abc155690e2ec5
+|$|&gt; &lt;|&gt;tag cat flag
+macsh: tag: Permission denied</code></pre></div>
+<p>The goal here is obvious: Take advantage of <code>tag</code> to get the MAC of a privileged command, so that I can find and eventually dump the flag file. Let&rsquo;s see how the crypto is implemented.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">fmac</span>(k0, k1, m):
+    C <span style="color:#f92672">=</span> AES<span style="color:#f92672">.</span>new(k1, AES<span style="color:#f92672">.</span>MODE_ECB)
+    bs <span style="color:#f92672">=</span> [C<span style="color:#f92672">.</span>encrypt(xor(b, f(k0, i))) <span style="color:#66d9ef">for</span> i,b <span style="color:#f92672">in</span> enumerate(to_blocks(m))]
+    <span style="color:#66d9ef">for</span> i, blocks <span style="color:#f92672">in</span> enumerate(zip(bs, to_blocks(m))):
+        cb, b <span style="color:#f92672">=</span> blocks
+    <span style="color:#66d9ef">return</span> reduce(xor, bs, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">*</span> N)</code></pre></div>
+<p>ECB mode! That means that each block is encrypted individually! The order and the neighbouring blocks don&rsquo;t matter. This is easy: Just tag something that has a privileged command within its own block! Then snip out that part, and provide it on its own.</p>
+<p>There&rsquo;s a snag here: tag gives you a MAC, not the encryption of each block. Their mac combines all of the encrypted blocks by <code>xor</code>ing them together. We can easily get rid of this by taking advantage of this property of xor:</p>
+<p>A ^ A = 0</p>
+<p>or rather</p>
+<p>A ^ B ^ A = B</p>
+<p>What this means is that if we can get the tag of a good block (A), and then the tag of the same good block plus a privileged block (A^B) we can xor these together and end up with the tag of just the privileged block!</p>
+<p>I write some code to do this and&hellip; fail. Time to run this locally and add some debugging prints.</p>
+<p>Notice that in the <code>fmac</code> function there are calls to <code>to_blocks</code>. This pads the input so that its length is a multiple of the block size (16 bytes) as also adds a padding block or two. Adding some prints we can see what&rsquo;s happening:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">|$|&gt; &lt;|&gt;tag echo hello
+Blocks:
+0: b<span style="color:#e6db74">&#39;6563686f2068656c6c6f000000000000&#39;</span> -&gt; b<span style="color:#e6db74">&#39;eba3ae8a1a00f6db419e625a2b4802db&#39;</span>
+1: b<span style="color:#e6db74">&#39;0000000000000000000a060606060606&#39;</span> -&gt; b<span style="color:#e6db74">&#39;c8b571a0faf80b49439c49ea2ca1953b&#39;</span>
+2316df2ae0f8fd9202022bb007e997e0
+|$|&gt; &lt;|&gt;tag echo aaaaaaaaaaa
+Blocks:
+0: b<span style="color:#e6db74">&#39;6563686f206161616161616161616161&#39;</span> -&gt; b<span style="color:#e6db74">&#39;1dd59512f963b859566b5dcf8aa2b8f8&#39;</span>
+1: b<span style="color:#e6db74">&#39;00000000000000000000000000000010&#39;</span> -&gt; b<span style="color:#e6db74">&#39;643600eae985916e0155e472099e8cd5&#39;</span>
+2: b<span style="color:#e6db74">&#39;10101010101010101010101010101010&#39;</span> -&gt; b<span style="color:#e6db74">&#39;383f4a034e7ad2e67b2ba196bcf9de5d&#39;</span>
+41dcdffb5e9cfbd12c15182b3fc5ea70</code></pre></div>
+<p>This throws a bit of a wrench in our gears: If we tag <code>GOOD|PRIV</code>, because its length will be different than <code>GOOD</code>, the extra blocks will not be the same, meaning we cannot just &lsquo;snip out&rsquo; the good part. We need the length to be the same. Let&rsquo;s try that:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">|$|&gt; &lt;|&gt;tag echo aaaaaaaaaaacat ././flag.txt
+Blocks:
+0: b<span style="color:#e6db74">&#39;6563686f206161616161616161616161&#39;</span> -&gt; b<span style="color:#e6db74">&#39;1dd59512f963b859566b5dcf8aa2b8f8&#39;</span>
+1: b<span style="color:#e6db74">&#39;636174202e2f2e2f666c61672e747874&#39;</span> -&gt; b<span style="color:#e6db74">&#39;a618de00b21a086d5ebc237480139199&#39;</span>
+2: b<span style="color:#e6db74">&#39;00000000000000000000000000000020&#39;</span> -&gt; b<span style="color:#e6db74">&#39;86998fd44e998eba9d99ab42730e19f4&#39;</span>
+3: b<span style="color:#e6db74">&#39;10101010101010101010101010101010&#39;</span> -&gt; b<span style="color:#e6db74">&#39;b391d29ba893e45655fdee555e9292fe&#39;</span>
+8ec5165dad73dad8c0b33bac272da26b
+|$|&gt; &lt;|&gt;tag echo aaaaaaaaaaaBBBBBBBBBBBBBBBB
+Blocks:
+0: b<span style="color:#e6db74">&#39;6563686f206161616161616161616161&#39;</span> -&gt; b<span style="color:#e6db74">&#39;1dd59512f963b859566b5dcf8aa2b8f8&#39;</span>
+1: b<span style="color:#e6db74">&#39;42424242424242424242424242424242&#39;</span> -&gt; b<span style="color:#e6db74">&#39;10412e29cbdc69e2bba87f7128cb70fe&#39;</span>
+2: b<span style="color:#e6db74">&#39;00000000000000000000000000000020&#39;</span> -&gt; b<span style="color:#e6db74">&#39;86998fd44e998eba9d99ab42730e19f4&#39;</span>
+3: b<span style="color:#e6db74">&#39;10101010101010101010101010101010&#39;</span> -&gt; b<span style="color:#e6db74">&#39;b391d29ba893e45655fdee555e9292fe&#39;</span>
+389ce674d4b5bb5725a767a98ff5430c</code></pre></div>
+<p>That&rsquo;s more like it! Now we have A^B^PAD, A^PRIV^PAD, but we want PRIV^SPAD, where SPAD is the padding of a short block (Since sending the privileged command on its own will be three blocks instead of four). We can use a combination of short and long commands to get what we want.</p>
+<p>PRIV^SPAD = A^PAD ^ PRIV^PAD ^ A^SPAD</p>
+<p>Now the two &lsquo;A&rsquo; bogus commands cancel out, the two long pads cancel out, and we&rsquo;re left with a privileged command with a short pad!</p>
+<p>This is where I hit another snag: When debugging I noticed that the order of the blocks matter. That&rsquo;s not the ECB I know! Turns out I missed an important part of <code>fmac</code>: <code>C.encrypt(xor(b, f(k0, i)))</code>. What does <code>f</code> do?</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">f</span>(k0, i):
+    <span style="color:#66d9ef">return</span> to_block(rot(to_int(k0), i <span style="color:#f92672">%</span> (<span style="color:#ae81ff">8</span> <span style="color:#f92672">*</span> N)))
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">rot</span>(n, c):
+    <span style="color:#66d9ef">return</span> (n <span style="color:#f92672">&gt;&gt;</span> c) <span style="color:#f92672">|</span> ((n <span style="color:#f92672">&amp;</span> ((<span style="color:#ae81ff">1</span> <span style="color:#f92672">&lt;&lt;</span> c) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>)) <span style="color:#f92672">&lt;&lt;</span> (<span style="color:#ae81ff">8</span> <span style="color:#f92672">*</span> N <span style="color:#f92672">-</span> c))</code></pre></div>
+<p>Ah! The key is being rotated by the block index! Shit! That means that the PRIV block I put at index 1 won&rsquo;t be MACed with the same key at index 0! How do we solve this?</p>
+<p>If you think about this key rotation you&rsquo;ll realize that there are effectively 128 versions of this key, since there are 128 bits in the key. What happens when we&rsquo;re on the 129th block? The key gets rotated all the way around&hellip; back to it&rsquo;s original value! This means that for PRIV to work properly, I need it to be MACed in the 129th block. This is easy to do! I just need to lengthen A so that it&rsquo;s 128 blocks long! The same math works out to cancel out PAD and A.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> sys
+
+<span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">prompt</span>():
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;|$|&gt; &#34;</span>)
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">xor</span>(x, y):
+    <span style="color:#66d9ef">return</span> <span style="color:#e6db74">&#34;&#34;</span><span style="color:#f92672">.</span>join([chr(ord(xe) <span style="color:#f92672">^</span> ord(ye)) <span style="color:#66d9ef">for</span> xe,ye <span style="color:#f92672">in</span> zip(x,y)])
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">exploit</span>():
+    prompt()
+    block <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;****************&#34;</span>
+    <span style="color:#75715e"># Get the MAC of LONG ^ privcmd</span>
+    <span style="color:#75715e"># privcmd =   &#34;ls ././././././.&#34; # Trying to find the flag</span>
+    privcmd <span style="color:#f92672">=</span>   <span style="color:#e6db74">&#34;cat ././flag.txt&#34;</span>
+    <span style="color:#75715e"># We pad 128 blocks so that privcmd is MACed with a key rotated 128 bits (back to orig)</span>
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;&lt;|&gt;tag &#34;</span><span style="color:#f92672">+</span>block<span style="color:#f92672">*</span><span style="color:#ae81ff">128</span> <span style="color:#f92672">+</span> privcmd)
+    buf <span style="color:#f92672">=</span> r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;|$|&gt; &#34;</span>)<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+    tagpl <span style="color:#f92672">=</span> buf[<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>]
+
+    <span style="color:#75715e"># Get the MAC of LONG ^ boguscmd</span>
+    cmd <span style="color:#f92672">=</span>   <span style="color:#e6db74">&#34;xxxxxxxxxxxxxxxx&#34;</span>
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;&lt;|&gt;tag &#34;</span><span style="color:#f92672">+</span>block<span style="color:#f92672">*</span><span style="color:#ae81ff">128</span> <span style="color:#f92672">+</span> cmd)
+    buf <span style="color:#f92672">=</span> r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;|$|&gt; &#34;</span>)<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+    tagbl <span style="color:#f92672">=</span> buf[<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>]
+
+    <span style="color:#75715e"># Get the MAC of SHORT ^ boguscmd</span>
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;&lt;|&gt;tag &#34;</span> <span style="color:#f92672">+</span> cmd)
+    buf <span style="color:#f92672">=</span> r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;|$|&gt; &#34;</span>)<span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>)
+    tagbs <span style="color:#f92672">=</span> buf[<span style="color:#f92672">-</span><span style="color:#ae81ff">2</span>]
+
+    <span style="color:#75715e"># Now we want to send privcmd ^ SHORT</span>
+    <span style="color:#75715e"># privcmd ^ SHORT = LONG ^ privcmd ^ LONG ^ boguscmd ^ SHORT ^ boguscmd</span>
+    tagpb <span style="color:#f92672">=</span> xor(tagpl<span style="color:#f92672">.</span>decode(<span style="color:#e6db74">&#39;hex&#39;</span>), tagbl<span style="color:#f92672">.</span>decode(<span style="color:#e6db74">&#39;hex&#39;</span>))<span style="color:#f92672">.</span>encode(<span style="color:#e6db74">&#39;hex&#39;</span>)
+    tagps <span style="color:#f92672">=</span> xor(tagpb<span style="color:#f92672">.</span>decode(<span style="color:#e6db74">&#39;hex&#39;</span>), tagbs<span style="color:#f92672">.</span>decode(<span style="color:#e6db74">&#39;hex&#39;</span>))<span style="color:#f92672">.</span>encode(<span style="color:#e6db74">&#39;hex&#39;</span>)
+    goodtag <span style="color:#f92672">=</span> tagps
+    r<span style="color:#f92672">.</span>sendline(goodtag <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;&lt;|&gt;&#34;</span><span style="color:#f92672">+</span>privcmd)
+    log<span style="color:#f92672">.</span>info(r<span style="color:#f92672">.</span>recvline())
+    prompt()
+    r<span style="color:#f92672">.</span>interactive()
+
+
+<span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;__main__&#34;</span>:
+    cmd <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;python3 macsh.py&#34;</span><span style="color:#f92672">.</span>split()
+    host, port <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;macsh.chal.pwning.xxx:64791&#34;</span><span style="color:#f92672">.</span>split(<span style="color:#e6db74">&#34;:&#34;</span>)
+    <span style="color:#66d9ef">if</span> len(sys<span style="color:#f92672">.</span>argv) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span>:
+        r <span style="color:#f92672">=</span> remote(host, port)
+        exploit()
+    <span style="color:#66d9ef">else</span>:
+        r <span style="color:#f92672">=</span> process(cmd)
+        exploit()</code></pre></div>
+<p>PCTF{fmac_is_busted_use_PMAC_instead}</p>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2017-09-03-rhme3-quals-whitebox/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2018-05-06-plaid2018-coconut/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

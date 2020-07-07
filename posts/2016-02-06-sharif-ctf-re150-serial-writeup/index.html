@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Sharif CTF 2016 - RE150 ‘Serial’ Writeup 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Sharif CTF 2016 - RE150 ‘Serial’ Writeup</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON FEB 6, 2016 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/ctf">CTF</a>, 
+      
+      <a class="meta" href="/categories/re">RE</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents"></nav>
+    
+    <p>Starting out as I always do, I ran <code>file</code>, <code>strings</code>, etc, then ran in my VM in <code>gdb</code> and opened the binary in IDA Pro. The first thing I noticed is that IDA can&rsquo;t view main in graph mode &ndash; They are likely jumping around weird to trick disassemblers.</p>
+<p>Looking in IDA, a few instruction into main there&rsquo;s a jump <em>back</em> a few bytes, into the middle of another instruction &ndash; suspicions confirmed. That&rsquo;s no problem. Hit <code>D</code> on the instruction that overlaps with the jump target to turn the code into data, move to the correct byte, and then hit <code>C</code> to start disassembling from there.</p>
+<p><img src="/assets/2016-02-06-Sharif-CTF-RE150-Serial-1.png" alt="before"></p>
+<p>Becomes&hellip;</p>
+<p><img src="/assets/2016-02-06-Sharif-CTF-RE150-Serial-2.png" alt="after"></p>
+<p>That makes more sense, but there&rsquo;s another jump into the middle of some instructions. You&rsquo;ll find this a lot in this binary, but you can just keep hitting <code>D</code> and <code>C</code> to fix it up. Since the jumps go backwards, you&rsquo;ll be disassembling &lsquo;over&rsquo; some of the jumps, but because they&rsquo;re only there to confuse you, you can pretty much just follow the code straight down.</p>
+<p>After doing that cleanup twice we see a reference to the first string we see &ldquo;Please Enter the valid key!\n&rdquo;.</p>
+<p>Continuing to clean as you proceed down, there&rsquo;s a call to <code>strlen</code> ensuring the length is 16 bytes. I like to put breakpoints on checks like these and restart the program to validate, but otherwise do most of my work statically.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">b *0x400A2C
+r
+<span style="color:#ae81ff">123456</span>
+<span style="color:#75715e"># bp is hit, ensure it doesn&#39;t jump</span>
+r <span style="color:#75715e"># restart</span>
+<span style="color:#ae81ff">1234567890123456</span>
+<span style="color:#75715e"># bp is hit, make sure it jumps</span></code></pre></div>
+<p><img src="/assets/2016-02-06-Sharif-CTF-RE150-Serial-3.png" alt="char compare"></p>
+<p>The rest of the check is straight forward: It checks that the <em>x</em>th byte is some hard code value, and then checks that the value of the <em>x</em>th byte <em>from the back</em>, plus the <em>x</em>th byte adds up to some other hardcoded value. You can hit <code>R</code> on the byte values to see the ASCII representation, but this won&rsquo;t work on the back half checks, because the two characters&rsquo; sums aren&rsquo;t likely still in the ASCII range. After 8 of these double checks you should have what you need.</p>
+<p>flag: EZ9dmq4c8g9G7bAV</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">vagrant@kali:/vagrant$ echo EZ9dmq4c8g9G7bAV | ./serial
+Please Enter the valid key!
+Serial number is valid :<span style="color:#f92672">)</span></code></pre></div>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-02-01-reading-january-2016/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

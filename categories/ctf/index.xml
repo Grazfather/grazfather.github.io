@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ctf on Grazfather</title>
+    <link>https://grazfather.github.io/categories/ctf/</link>
+    <description>Recent content in ctf on Grazfather</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Sat, 24 Nov 2018 12:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://grazfather.github.io/categories/ctf/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Microcorruption Hollywood</title>
+      <link>https://grazfather.github.io/posts/2018-11-24-microcorruption-hollywood/</link>
+      <pubDate>Sat, 24 Nov 2018 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2018-11-24-microcorruption-hollywood/</guid>
+      <description>I&amp;rsquo;m a few years late to the party here, but I&amp;rsquo;ve recently managed to finish Microcorruption. I had finished most of the challenges back in 2014, when they were released, but not having IDA back then, I was stumped when the first challenge that relocated showed up, because it broke the online disassembler, and I was helpless without it :).
+I recently took another look, having picked up some skill and knowledge in the intervening years.</description>
+    </item>
+    
+    <item>
+      <title>Plaid CTF 2018 coconut</title>
+      <link>https://grazfather.github.io/posts/2018-05-06-plaid2018-coconut/</link>
+      <pubDate>Sun, 06 May 2018 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2018-05-06-plaid2018-coconut/</guid>
+      <description>First we&amp;rsquo;re given an address to connect to. Upon connecting with nc we see a bunch of (AT&amp;amp;T 🤮) x86_64 assembly, and we are told to delete lines to get under a certain threshold without changing the return value. Easy enough! I backtrack from the last write to eax and trace back until I see its final immediate value being written to the stack. Submit those lines, easy flag.
+Let&amp;rsquo;s look at an example:</description>
+    </item>
+    
+    <item>
+      <title>Plaid CTF 2018 macsh</title>
+      <link>https://grazfather.github.io/posts/2018-05-06-plaid2018-macsh/</link>
+      <pubDate>Sun, 06 May 2018 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2018-05-06-plaid2018-macsh/</guid>
+      <description>For this challenge we&amp;rsquo;re given a network address where we can access what looks like a simple shell, and the source code to this shell, which is thankfully python code.
+Looking at macsh.py we see a set of commands, some of which are privileged. We can echo without privilege, and tag. What&amp;rsquo;s tag?
+Looking at the tag implementation, it looks like it creates and prints the MAC of the specified args, as long as the args don&amp;rsquo;t start with a priveleged command.</description>
+    </item>
+    
+    <item>
+      <title>RHME3 Quals - Whitebox</title>
+      <link>https://grazfather.github.io/posts/2017-09-03-rhme3-quals-whitebox/</link>
+      <pubDate>Sun, 03 Sep 2017 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2017-09-03-rhme3-quals-whitebox/</guid>
+      <description>Crypto is certainly not my specialty but this is an &amp;lsquo;automotive ctf&amp;rsquo;, and working in the industry it became a pride point for me to solve this.
+You&amp;rsquo;re provided a binary that reads 16 bytes of input and encrypts it with a hardcoded key. It doesn&amp;rsquo;t take a lot of looking at it to recognize that it&amp;rsquo;s (probably) AES. You can, for example, provide shorter input and see that the output is 16 bytes regardless, or change only one byte and see that the entire output changes, to prove that it&amp;rsquo;s a block cipher.</description>
+    </item>
+    
+    <item>
+      <title>Qiwi CTF 2016 - RE300_3</title>
+      <link>https://grazfather.github.io/posts/2016-11-18-qiwictf-re300_3/</link>
+      <pubDate>Fri, 18 Nov 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-11-18-qiwictf-re300_3/</guid>
+      <description>This challenge provided task.bin an ELF.
+task.bin: ELF 32-bit LSB executable, Atmel AVR 8-bit, version 1 (SYSV), statically linked, not stripped Whoa! AVR! Lucky for us it&amp;rsquo;s 1. an ELF and 2. not stripped.
+Popping it into IDA and manually selecting &amp;ldquo;Atmel AVR&amp;rdquo; as the CPU I was happy to see demangled C++ function names as well as global symbols. Looking at the globals there were a few of note: i, int_recorded, buttonState, and Serial.</description>
+    </item>
+    
+    <item>
+      <title>CTF(x) - Binary 250 - Dat Boinary</title>
+      <link>https://grazfather.github.io/posts/2016-08-28-ctfx-dat-boinary/</link>
+      <pubDate>Sun, 28 Aug 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-08-28-ctfx-dat-boinary/</guid>
+      <description>For this challenge we&amp;rsquo;re provided the binary and a libc.so.6 binary. Just by being provided this second binary we are hinted that we will need some fuctionality from it: Rop or ret2libc probably.
+[grazfather ~/code/CTFs/ctfx]$ file dat-boinary dat-boinary: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, not stripped I&amp;rsquo;ve recently bought the personal edition of Binary Ninja, and so will be using it for most of my static analysis.</description>
+    </item>
+    
+    <item>
+      <title>Google CTF - Mobile 150 - Ill Intentions</title>
+      <link>https://grazfather.github.io/posts/2016-05-02-google-ctf-mobile-150-ill-intentions/</link>
+      <pubDate>Mon, 02 May 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-05-02-google-ctf-mobile-150-ill-intentions/</guid>
+      <description>The timing for this challenge was just about perfect for me. A new colleague of mine just last week did a presentation on smali basics and debugging Android Applications using IDA. Before that I had only done some of the most basic patches in smali and no real dynamic stuff other than with am or purpose-built apps.
+My process for an APK is pretty simple: Unzip, dex2jar, and apktool -d. This yields a .</description>
+    </item>
+    
+    <item>
+      <title>Boston Key Party - PWN 5 ‘Complex Calc’</title>
+      <link>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-complex-calc/</link>
+      <pubDate>Sun, 06 Mar 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-complex-calc/</guid>
+      <description>Taking a quick look at this binary, we see it&amp;rsquo;s almost idenfical to the &amp;lsquo;Simple Calc&amp;rsquo;. Testing my ROP chain on it, however, crashes in free: It looks like free(0) won&amp;rsquo;t fly anymore.
+To confirm that my ROP was still valid, I set a breakpoint on the call to free and manually wrote the pointer to the original buffer into RDI. With this, my ROP indeed did work and I could focus on passing the free call.</description>
+    </item>
+    
+    <item>
+      <title>Boston Key Party - PWN 5 ‘Simple Calc’</title>
+      <link>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/</link>
+      <pubDate>Sun, 06 Mar 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/</guid>
+      <description>Running strings we see this is a x86_64 binary statically compiled, which should make things a lot easier for us.
+vagrant@kali:/vagrant/ctfs/bostonkp2016$ file simplecalc simplecalc: ELF 64-bit LSB executable, x86-64, version 1 (GNU/Linux), statically linked, for GNU/Linux 2.6.24, BuildID[sha1]=0x0676a83cc38d2b9b20c612f4d7a19255eaa93b52, not stripped Running the application, with IDA open on the side to quickly get past any restriction, I see that this program simply takes some number of calculations and then for each it allows you to choose wish operation to perform and the two operands.</description>
+    </item>
+    
+    <item>
+      <title>Sharif CTF 2016 - RE100 ‘Android App’ Writeup</title>
+      <link>https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/</link>
+      <pubDate>Sun, 14 Feb 2016 15:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/</guid>
+      <description>This one I didn&amp;rsquo;t actually solve in time, because I spent too much time trying to a) Use frida and b) RE the args to the two import functions.
+Because I am a fan of Frida (first cutting my teeth on it during the 2015 Flare On challenge), I decided I would use it in lieu of a debugger for this challenge (I didn&amp;rsquo;t want to figure out the toolchain to get the lldb client running on my mac).</description>
+    </item>
+    
+    <item>
+      <title>Sharif CTF 2016 - RE150 ‘Serial’ Writeup</title>
+      <link>https://grazfather.github.io/posts/2016-02-06-sharif-ctf-re150-serial-writeup/</link>
+      <pubDate>Sat, 06 Feb 2016 17:04:23 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-02-06-sharif-ctf-re150-serial-writeup/</guid>
+      <description>Starting out as I always do, I ran file, strings, etc, then ran in my VM in gdb and opened the binary in IDA Pro. The first thing I noticed is that IDA can&amp;rsquo;t view main in graph mode &amp;ndash; They are likely jumping around weird to trick disassemblers.
+Looking in IDA, a few instruction into main there&amp;rsquo;s a jump back a few bytes, into the middle of another instruction &amp;ndash; suspicions confirmed.</description>
+    </item>
+    
+  </channel>
+</rss>

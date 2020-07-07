@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>electronics on Grazfather</title>
+    <link>https://grazfather.github.io/categories/electronics/</link>
+    <description>Recent content in electronics on Grazfather</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Sun, 08 Dec 2019 12:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://grazfather.github.io/categories/electronics/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Glitching the Olimex LPC-P1343</title>
+      <link>https://grazfather.github.io/posts/2019-12-08-glitcher/</link>
+      <pubDate>Sun, 08 Dec 2019 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2019-12-08-glitcher/</guid>
+      <description>Back in the summer I was lucky enough to finagle my boss into letting me take Dmitry Nedospasov (@nedos)&amp;rsquo;s hardware hacking training. In it I cut my teeth on using an FPGA to interface with target hardware. After implementing a UART we implemented a module that could parse part of Apple&amp;rsquo;s OneWire, used to negotiate power exchange, among other things, with your iPhone over the lightning cable. Our &amp;lsquo;final project&amp;rsquo; was to build a UART-controllable glitcher, using it to try to glitch a development board.</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Qiwi CTF 2016 - RE300_3 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Qiwi CTF 2016 - RE300_3</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON NOV 18, 2016 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/ctf">CTF</a>, 
+      
+      <a class="meta" href="/categories/re">RE</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents"></nav>
+    
+    <p>This challenge provided <em>task.bin</em> an ELF.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">task.bin: ELF 32-bit LSB executable, Atmel AVR 8-bit, version <span style="color:#ae81ff">1</span> <span style="color:#f92672">(</span>SYSV<span style="color:#f92672">)</span>, statically linked, not stripped
+</code></pre></div><p>Whoa! <a href="https://en.wikipedia.org/wiki/Atmel_AVR">AVR</a>! Lucky for us it&rsquo;s 1. an ELF and 2. not stripped.</p>
+<p>Popping it into IDA and manually selecting &ldquo;Atmel AVR&rdquo; as the CPU I was happy to see demangled C++ function names as well as global symbols. Looking at the globals there were a few of note: <code>i</code>, <code>int_recorded</code>, <code>buttonState</code>, and <code>Serial</code>. OK, this clearly expects input from the GPIOs and/or over serial.</p>
+<p>Looking at the functions, there were a few to reinforce my hypothesis: <code>HardwareSerial::read</code> for one. Although I didn&rsquo;t see anything that showed GPIOs being read, this wasn&rsquo;t too big of a deal: GPIOs are easily read just by reading from a certain register. There were a few that made me a little bit nervous: <code>TIMER0_OVF</code> specifically. If I had to deal with precise timing I would not have fun. The timers, however, are probably used to keep the serial clock.</p>
+<p>Without a <code>main</code> function I started my analysis at <code>__RESET</code>. Thanks to the labels I was able to easily skip most of the function, which was just clearing our the <em>.bss</em> segments. Looking at where the &lsquo;function&rsquo; &lsquo;ended&rsquo;, I found a jump to, basically, an infinite loop, and just before it a call to <code>sub_2D4</code>. This is <code>main</code>.</p>
+<p>I started in <code>main</code> but was quickly overwhelmed with what was going on. I am not familiar with the instruction set, and since a lot of it is configuration, I would have to constantly refer to the datasheet. I needed something faster.</p>
+<p><img src="/assets/2016-11-18-QiwiCTF-RE300_3-main.png" alt="String references"></p>
+<p>Now the AVR is a series of microcontrollers that is ubiquitous in electronics. Your TV&rsquo;s remote might have one (though it&rsquo;s likely a PIC). They exploded in popularity, however, with the introduction of the Arduino. I had a hunch that this was an Arduino binary, so I decided to see what an arduino binary looks like in IDA.</p>
+<p>I wrote up a simple &lsquo;sketch&rsquo; that setup serial communication, sent and received a few bytes, and read input from a few GPIOs. My goal was to get the same set of functions and a similar setup to my mystery binary &ndash; This would let me find the common code and basically ignore it completely.</p>
+<p>After figuring out where the damned ELF is written to when compiled (some temp folder), I popped it in IDA and was happy to see that the code was indeed <em>very</em> similar. <code>micros</code>, for example, was a function I thought I might have to reverse, but it turned out it was just the delay function. All I really needed to look at was <code>main</code>, and I could ignore most of the first basic block, as it was just serial setup.</p>
+<p>Since I figured the binary would send something out on the serial line I looked at the strings and found three that mattered: &quot; recorded&rdquo;, &ldquo;Wrong flag&rdquo;, and &ldquo;Right flag&rdquo;. Easy! Just find the Xrefs and trace back to find how to reach either!</p>
+<p>This is where I hit another snag: No Xrefs. Come to think of it, I couldn&rsquo;t find an xref to any of the globals I found. There was a reason for this. Two actually:</p>
+<ol>
+<li>AVRs use a <a href="https://en.wikipedia.org/wiki/Harvard_architecture">Harvard Architecture</a>. That means that they have two address spaces. One for code (read off of the internal flash) and one for data. The CPU knows which to use simply by context: Branch instructions use the code address space, sram reads use the data. This was messing up IDA, since it expects one. Whoever made the AVR CPU module for IDA handled this: The data segment was mapped to start at 0x800000. This means that my globals appeared way higher than they really were: <code>buttonState</code> was shown as 0x800168 but was actually at 0x168.</li>
+<li>AVRs are 8-bit micros. This means that the registers (most) are only 8 bits long. This means that they can&rsquo;t even hold an entire address! This is solved with special instructions that expect an address across two registers.</li>
+</ol>
+<p>Armed with this knowledge I was able to find the xrefs. I just had to look for code that wrote two immediates into two registers that, when appended to eachother, formed the 16-bit address I was looking for. Skimming through the code I quickly found what I was looking for: The branch to &ldquo;Right flag&rdquo; at 0x42A.</p>
+<p><img src="/assets/2016-11-18-QiwiCTF-RE300_3-loop.png" alt="String references"></p>
+<p>Despite knowing where I needed to get to, I had a very hard time figuring out where the input was read: It was time to go dynamic.</p>
+<p><a href="https://github.com/buserror/simavr">Simavr</a> is a great little AVR emulator and I could not have solved this challenge without it. While there&rsquo;s a CLI to run hex files, what I wanted (gpio and serial) was a little bit more involved. Luckily there were examples that did what I needed. Guessing that the AVR was an atmega328 (an AVR used commonly in the Arduino) it was little trouble combining the examples and adding a few tweaks to get it running. Using <code>cu</code> to connect to the tty that simavr created I could see the output:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">0 recorded
+0
+0
+...
+</code></pre></div><p>I tried to send text over serial but it appeared to be non responsive. I ended up writing code to randomly press GPIOs, but I don&rsquo;t think it worked at all, what I needed was a debugger. Luckily this is another thing that simavr supports! My simulation code can be found <a href="https://gist.github.com/Grazfather/32d7c90322b48a13c4d6134d25cc8e0a">here</a>.</p>
+<p>Installing <code>avr-gdb</code> (with <code>brew</code>) and setting up simavr to setup a gdb server I could connect. Only issue was that breakpoints didn&rsquo;t work! After some struggling I found two peculiarities:</p>
+<ol>
+<li>You cannot set a breakpoint on a specific address. GDB will add 0x800000 (like IDA does) but this is out of the address space and will never hit. You can get around this by setting PC-relative breakpoints e.g. <code>b *($pc + 0x2c)</code>.</li>
+<li>For some reason the addresses in GDB are <em>double</em> what you see in IDA. I found this by setting random traps (which <em>do</em> work) and correlating the GDB address with the address in main.</li>
+</ol>
+<p>This meant that if I wanted to set up a breakpoint in GDB I had to:</p>
+<ol>
+<li>Find the target address in IDA and double it.</li>
+<li>Find the current PC in GDB.</li>
+<li>Subtract the two numbers and Use the offset to set the bp <code>b *($pc + &lt;offset&gt;)</code>.</li>
+</ol>
+<p>Now it was a matter of forcing the code path to go towards the prints I wanted. I set up breakpoints at the conditional branches at 0x3F4, 0x3F8, 0x41C, and 0x431. At each point I simply set the appropriate register or status flag to take the branch I wanted. The branch at 0x431 is hit in a loop, each time after doing a series of comparisons. If any fail the badboy message is printed. These checks are what I need to pass. The check before that, at 0x41C, checks that some variable is 10. Since the flag format for this challenge was 10 numbers, this is clearly a check that enough have been reported.</p>
+<p><img src="/assets/2016-11-18-QiwiCTF-RE300_3-countcheck.png" alt="Num inputs check"></p>
+<p>I got around these by faking the number of report values to 10 at the 0x41C check. The badboy check I got around by setting up a command on the breakpoint to automatically dump the registers (<code>info reg</code> or <code>i r</code>), set the zero flag in the status register to pass the check (<code>set $SREG = 0x37</code> has this bit set and didn&rsquo;t mess with the others), and then <code>c</code>ontinuing. I then looked at the values in r18 and r19, that were printed out, appended them (<code>print r19&lt;&lt;8 + r18</code>), and submitted.</p>
+<p>Flag: 307, 908, 621, 588, 332, 515, 546, 605, 863, 90</p>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-11-06-manual-unpacking/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2017-01-22-reading-sept-oct-2016/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

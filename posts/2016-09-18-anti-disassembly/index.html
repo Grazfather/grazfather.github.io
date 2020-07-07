@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Anti-Disassembly Techniques and Mitigation 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Anti-Disassembly Techniques and Mitigation</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON SEP 18, 2016 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/ida">IDA</a>, 
+      
+      <a class="meta" href="/categories/malware">MALWARE</a>, 
+      
+      <a class="meta" href="/categories/re">RE</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#how-disassemblers-work">How disassemblers work</a></li>
+    <li><a href="#tricking-a-flow-oriented-disassembler">Tricking a flow-oriented disassembler</a></li>
+    <li><a href="#mitigation">Mitigation</a></li>
+  </ul>
+</nav>
+    
+    <p>This is just a small collection of notes about disassembly and anti-disassembly tricks, and how to get around them.</p>
+<h2 id="how-disassemblers-work">How disassemblers work</h2>
+<p>The simplest disassembler is super simple, but they can also be very complicated. More advanced disassemblers try to recognize things like functions (which may have multiples <em>returns</em>), idioms like jump tables, and not get tricked by anti-disassembly tricks. They come in two general categories.</p>
+<ol>
+<li>Linear - Dissassembles all instructions in order, starting from some point (usually the entry point of a binary).</li>
+<li>Flow-oriented - These follow jumps and calls and continue disassembling from their target. They also might stop disassembling after return instructions, so avoid showing instructions that are unreachable (and thus probably not code at all).</li>
+</ol>
+<p>Because flow-oriented disassemblers follow branchesm and because conditional branches exist, the disassembler has to make a decision. Often, for normal code, a disassembler can simply follow both (e.g. jump and don&rsquo;t jump, disassemble from the target and from the next instruction). The problem is that there can be contradictary or incompatible jumps.</p>
+<h2 id="tricking-a-flow-oriented-disassembler">Tricking a flow-oriented disassembler</h2>
+<p>There are a variety of ways to trick a disassembler. Here are just a few:</p>
+<ol>
+<li>
+<p>Put two consecutive, but &lsquo;opposite&rsquo; conditional branches, e.g. a <code>jz</code> followed by a <code>jnz</code>.</p>
+</li>
+<li>
+<p>Use a constant condition, e.g. <code>xor eax, eax; jz &lt;addr&gt;</code>.</p>
+</li>
+<li>
+<p>Use a branch that does nothing, e.g. <code>call &lt;addr&gt;</code>, then at <em>addr</em>: <code>pop &lt;reg&gt;</code>. This is commonly used in shellcode to get an address of in-band data, since on x86 it&rsquo;s the easiest way to get an address around the PC.</p>
+</li>
+<li>
+<p>Use a series of bytes that will be executed more than once, as different instructions, depending where the PC lies. e.g. <code>EB FF C0 48</code>. When a disassembler disassembles this (as x86), it&rsquo;ll see <code>EB FF</code> as <code>jmp 1</code>, then <code>C0</code>, which isn&rsquo;t a valid opcode, and finally <code>48</code> as <code>dec eax</code>.</p>
+<p>The problem is that this isn&rsquo;t how it&rsquo;s executed! the <code>jmp 1</code> jumps one byte from the start of the instruction (or rather jumps -1 bytes (0xFF) from the end of the instruction). This makes the EIP land on the 0xFF. Now the CPU decodes <code>FF C0</code> as <code>inc eax</code> and <code>48</code> and <code>dec eax</code>. In the end. this code basically does nothing. The solution here: NOP out all four bytes.</p>
+</li>
+<li>
+<p>Abuse <code>call</code> and <code>ret</code> to mess up function boundaries. e.g. <code>E8 00 00 00 00 C3</code>, which is <code>call 5; ret</code>. This will push the return address onto the stack, which will be the byte right after the <code>ret</code>. The <code>ret</code> will then pop off this address into the PC, which effectively makes this two intruction combo useless. However, this cal make the disassembler think that the function ends there and that the next instruction is the end of another function.</p>
+</li>
+<li>
+<p>Heavy use of function pointers. While this can be done without the intent of making the reverse engineer&rsquo;s life more difficult, it has the same effect. Essentially, the address will have cross references to whenever the pointer is copied, but when it is <em>called</em>, since it&rsquo;s called from a register or memory address, the disassembler usually can&rsquo;t determine when it&rsquo;s used.</p>
+</li>
+</ol>
+<h2 id="mitigation">Mitigation</h2>
+<p>The most difficult part in getting around these tricks isn&rsquo;t anything to do with patching around them &ndash; That&rsquo;s trivial. The trick is in identifying them quickly and not wasting your time figuring out what they do. That can only be done, really, with practice. Most of all the anti-disassembly I&rsquo;ve learned I learned from the amazing book <a href="http://www.nostarch.com/malware">Practical Malware Analysis</a> in chapter 16. The book includes labs, which I recommend you do. You can see my writeups <a href="https://github.com/Grazfather/PracticalMalwareLabs/blob/master/chapter16/readme.md">here</a>.</p>
+<p>Once they&rsquo;re identified, IDA Pro makes it <em>mostly</em> easy to fix. My favourite way to fix them, for the most part, is by using <code>PatchByte</code>. This can be done from the &lsquo;File &gt; IDC Command&hellip;&rsquo; dialog, and if you don&rsquo;t want to supply the address, you can use <code>ScreenEA</code> to use the address of the cursor. This usually looks like <code>PatchByte(ScreenEA(), 0x90);</code>. Make sure to run it for each byte you want to remove.</p>
+<p>When you know which function is being called from a function pointer (obviously being careful for when more than one function is called from this location) you can add an xref manually using <code>AddCodeXref</code>. You&rsquo;d use is as so <code>AddCodeXref(ScreenEA(), &lt;addr of function&gt;, fl_CN);</code>, making sure you&rsquo;ve selected the call instruction. You can do the same for jumps, substituting <em>fl_CN</em> for <em>fl_JN</em>.</p>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-09-01-reading-june-august-2016/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-09-18-anti-debugging/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

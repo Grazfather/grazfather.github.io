@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Manual Unpacking 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Manual Unpacking</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON NOV 6, 2016 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/notes">NOTES</a>, 
+      
+      <a class="meta" href="/categories/re">RE</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#manual-unpacking-techniques">Manual Unpacking Techniques</a></li>
+    <li><a href="#common-packers">Common Packers</a></li>
+  </ul>
+</nav>
+    
+    <p>While packers&rsquo; original intention is to minimize the size of a binary, they are often used today as an &lsquo;easy&rsquo; form of obfuscation, making us reverse engineers&rsquo; lives more difficult. In order to get around them it&rsquo;s important to understand how they work in practice first.</p>
+<p>Since writing an application that is intended to be packed is a pain the ass, packing is usually done as a separate step, and most packers can work basically agnostic of the content of what it&rsquo;s packing.</p>
+<p>The way packers work is that by creating a binary that &lsquo;hijacks&rsquo; the original entry point of the target binary to instead call an unpacking stub. The packer packs the target binary in some reversible way and hides it in the new binary. The unpacking stub locates the original, packed binary, unpacks it into memory, and finishes by jumping to the <em>original entry point</em> (OEP). Since it&rsquo;s often the intention to hide the imports that the final binary will use, the packer often has to build its own import table and resolve the imports itself: This is prevent a static tool like <code>readelf</code> or <code>CFF Explorer</code> from getting an idea of the functionality of the original packed binary in its packed form.</p>
+<p>Some well-known packers provide tools for unpacking statically or have the technique for unpacking documented somewhere. If you can identify the packer used, it&rsquo;s worth looking for a tool that can unpack it for you. An example of this is <a href="https://upx.github.io/">UPX</a>. Some binaries will use a modified packer, which might fail to unpack with the normal tool, or worse, unpack <em>incorrectly</em>. <a href="http://flare-on.com/2015.html">Flare-on 2015</a> had such a challenge: It seemed to be vanilla UPX, but if you unpacked it using the tool, the challenge was unsolvable.</p>
+<p>When it comes to obtaining the unpacked binary, the process usually involves identifying the <em>OEP</em> and stopping once execution has reached that point. This jump is usually refered to as a <em>tail jump</em> (no relation to a tail call).</p>
+<p>Once the OEP has been found, the process memory needs to be dumped, the entry point needs to be changed to the OEP (since the unpacking stub probably still exists in the process memory), and the import table needs to be fixed. Luckily there are tools for that. <code>OllyDump</code> and <code>ImpREC</code> are two such tools, and tutorials on how to use them litter the internet.</p>
+<h2 id="manual-unpacking-techniques">Manual Unpacking Techniques</h2>
+<ul>
+<li>Put breakpoints at the end of loops: At this point try to re-analyze the binary for new assembly routines.</li>
+<li>Look for calls that don&rsquo;t return</li>
+<li>Look for jumps with no code after them.</li>
+<li>Look for long jumps that jump into a different section: These can indicate a jump from the unpacking stub and the binary itself.</li>
+<li>Look for <code>pushad</code>. Sent a memory breakpoint on these stack addresses, which should break on the corresponding <code>popad</code>. These are often used to save the context for <code>main</code>.</li>
+<li>Add breakpoints on <code>GetVersion</code> or <code>GetCommandLineA</code>: These are often called from the normal <code>main</code> wrapper that windows compilers add.
+<ul>
+<li><code>GetModuleHandle</code> for GUI apps.</li>
+</ul>
+</li>
+<li>Use <code>gcore</code> on linux to dump a process&rsquo;s memory once it&rsquo;s been unpacked. This provides a CORE file, which can be openend in gdb or, even better, IDA. Note that the entry point won&rsquo;t have been patched, so this only really helps you with static analysis.
+<ul>
+<li>You can use <code>ProcDump</code> similarly on windows.</li>
+</ul>
+</li>
+<li>Some more advanced unpacker only unpack &lsquo;on demand&rsquo;, meaning that the whole binary is never fully unpacked unless you touch all functionality. This can usually be avoided by scripting your debugger to call the appropriate unpacking routines.</li>
+<li>DLLs can be unpacked, but their exports must remain. <code>DllMain</code>, which runs on load, then, contains the unpacker. Make sure to change your debuggers settings to break on <em>load</em> to break early enough to walk through this process.</li>
+</ul>
+<h2 id="common-packers">Common Packers</h2>
+<ul>
+<li>UPX</li>
+<li>PECompact</li>
+<li>ASPack - Use a hardware breakpoint on the stack to easily identify the tail jump.</li>
+<li>Petit - Known to keep one import per library from the original binary to avoid the need to use <code>LoadLibraryA</code>.</li>
+<li>WinUpack - Look for a <code>push</code>/<code>retn</code> combo to jump to the OEP.</li>
+<li>Themida</li>
+</ul>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-10-12-obfuscation-techniques/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-11-18-qiwictf-re300_3/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>crypto on Grazfather</title>
+    <link>https://grazfather.github.io/categories/crypto/</link>
+    <description>Recent content in crypto on Grazfather</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Sun, 06 May 2018 12:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://grazfather.github.io/categories/crypto/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Plaid CTF 2018 macsh</title>
+      <link>https://grazfather.github.io/posts/2018-05-06-plaid2018-macsh/</link>
+      <pubDate>Sun, 06 May 2018 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2018-05-06-plaid2018-macsh/</guid>
+      <description>For this challenge we&amp;rsquo;re given a network address where we can access what looks like a simple shell, and the source code to this shell, which is thankfully python code.
+Looking at macsh.py we see a set of commands, some of which are privileged. We can echo without privilege, and tag. What&amp;rsquo;s tag?
+Looking at the tag implementation, it looks like it creates and prints the MAC of the specified args, as long as the args don&amp;rsquo;t start with a priveleged command.</description>
+    </item>
+    
+    <item>
+      <title>RHME3 Quals - Whitebox</title>
+      <link>https://grazfather.github.io/posts/2017-09-03-rhme3-quals-whitebox/</link>
+      <pubDate>Sun, 03 Sep 2017 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2017-09-03-rhme3-quals-whitebox/</guid>
+      <description>Crypto is certainly not my specialty but this is an &amp;lsquo;automotive ctf&amp;rsquo;, and working in the industry it became a pride point for me to solve this.
+You&amp;rsquo;re provided a binary that reads 16 bytes of input and encrypts it with a hardcoded key. It doesn&amp;rsquo;t take a lot of looking at it to recognize that it&amp;rsquo;s (probably) AES. You can, for example, provide shorter input and see that the output is 16 bytes regardless, or change only one byte and see that the entire output changes, to prove that it&amp;rsquo;s a block cipher.</description>
+    </item>
+    
+  </channel>
+</rss>

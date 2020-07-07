@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Glitching the Olimex LPC-P1343 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Glitching the Olimex LPC-P1343</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON DEC 8, 2019 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/electronics">ELECTRONICS</a>, 
+      
+      <a class="meta" href="/categories/fpga">FPGA</a>, 
+      
+      <a class="meta" href="/categories/pwn">PWN</a>, 
+      
+      <a class="meta" href="/categories/re">RE</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents">
+  <ul>
+    <li><a href="#simulation">Simulation</a></li>
+  </ul>
+
+  <ul>
+    <li><a href="#modifying-the-board">Modifying the board</a></li>
+    <li><a href="#determining-the-supply-voltage">Determining the supply voltage</a></li>
+    <li><a href="#the-moment-of-truth">The moment of truth</a></li>
+    <li><a href="#conclusions">Conclusions</a></li>
+  </ul>
+</nav>
+    
+    <p>Back in the summer I was lucky enough to finagle my boss into letting me take Dmitry Nedospasov (<a href="https://twitter.com/nedos">@nedos</a>)&rsquo;s <a href="https://toothless.co/trainings/">hardware hacking training</a>. In it I cut my teeth on using an FPGA to interface with target hardware. After implementing a UART we implemented a module that could parse part of Apple&rsquo;s OneWire, used to negotiate power exchange, among other things, with your iPhone over the lightning cable. Our &lsquo;final project&rsquo; was to build a UART-controllable glitcher, using it to try to glitch a development board.</p>
+<p>While we got it working, it was with a bit of hand-holding from Dmitry, including setting up the scope, the power supply etc. In an effort to concretize the knowledge, I decided when I got home that I wanted to do it again on my own.</p>
+<p>If you haven&rsquo;t noticed, hobbyist FPGAs have flooded the market. In 2015 Lattice&rsquo;s iCE40 series FPGA had <a href="https://www.youtube.com/watch?v=SOn0g3k0FlE">its bitstream format reverse engineered</a>, spawning an explosion of open source tooling for synthesizing, place and route, and simulation. Altera&rsquo;s (Intel&rsquo;s) and Xilinx&rsquo;s bit stream format have not been reverse engineered, and so you are stuck using their tools if you decide to develop on those boards. I&rsquo;ve played around with a few boards, and the <a href="https://www.crowdsupply.com/1bitsquared/icebreaker-fpga">iCEBreaker</a> is my recent favourite. The people on their Discord are super helpful, the toolchain is excellent, and the board itself is great for the price.</p>
+<p>Porting it over wasn&rsquo;t too much work, the only real difference was that the FPGA we used in training was a Digilent Arty, which has a 100MHz clock, while the iCEBreaker&rsquo;s has a 12MHz. This requires we change anything that&rsquo;s counting cycles to account for the 8.33x slower clock, and we lose some granularity in anything we want to count (since each clock cycle has a longer duration). This is also an opportunity to generalize some of the code to not make as many assumptions about the FPGA it&rsquo;s running on. Because I was rusty, I chose to try to &lsquo;blindly&rsquo; re-write some of the modules, instead of using the code Dmitry has on <a href="https://github.com/toothlessco/arty-glitcher">his github</a>.</p>
+<p><a href="/assets/2019-12-08-glitching/glitcher_clean.jpg"><img src="/assets/2019-12-08-glitching/glitcher_clean.jpg" alt="glitcher setup"></a></p>
+<h1 id="background">Background</h1>
+<p>I can&rsquo;t really give a better background to this than Dmitry does in his <a href="https://toothless.co/blog/bootloader-bypass-part1/">blog post</a> about it. In short, when the target board boots up the bootROM reads the flash, and depending on the value it reads from address 0x2FC, and the state of a few pins, it determines whether the UART goes to a sort of shell, and whether you can use this shell to read out the flash. This is intended so that you can develop your firmware and debug in the bootloader, but then flash a version that sets this value when your firmware is production ready, hopefully preventing the end user from dumping it from the flash. The vulnerability here is that it&rsquo;s a 4 byte value, and only a specific value (0x12345678) will lock the bootloader in the expected way. That means that if any of the 32 bits read here are incorrect, the bootROM will consider the device unlocked. This is opposed to, for example, requiring a specific value to unlock the bootloader, and having the other 4 billion values lock it.</p>
+<p>If we can get the CPU to misread the flash at the very moment it happens to be reading that value, then we can have it jump to the bootloader in the unlocked state. It&rsquo;s as easy as that! (Famous last words)</p>
+<p>The idea here is that we will use the FPGA as a tool that goes between my host machine and the target board. We can communicate with it using UART, and certain special bytes are interpreted as commands for the FPGA, while other values are simply passed through to the target board (to talk to its bootloader). The values sent back from the target board are simply passed directly through to the host machine. The FPGA supports configuring the delay between resetting the target board and pulsing a &lsquo;glitch voltage&rsquo;, and how long that glitch pulse lasts. It also supports sending multiple pulses, and of course can reset the target board and activate the glitch.</p>
+<p>We use an FPGA here instead of a microcontroller for a few reasons:</p>
+<ul>
+<li>First, because we can configure things at the clock level, we can have very specific timing (1s/12000000 = 83.3ns precision).</li>
+<li>Second, for the same reason, we don&rsquo;t have to worry about jitter: With a raspberry PI we&rsquo;d worry about the OS scheduling other process and such, contributing to inconsistency between runs. Even with an Arduino or other microcontroller, with no operating system, we&rsquo;d have to worry about interrupts messing up the timing.</li>
+<li>Third, I wanted to get more practice using an FPGA.</li>
+</ul>
+<h1 id="setup">Setup</h1>
+<p>For the toolchain, I mostly took everything from <a href="https://github.com/icebreaker-fpga/WTFpga">WTFpga</a>, which is a beginner&rsquo;s lab that uses the iCEBreaker board. It uses <a href="https://github.com/YosysHQ/yosys">Yosys</a>, <a href="https://github.com/YosysHQ/nextpnr">nextpnr</a>, and a few tools from project <a href="https://github.com/cliffordwolf/icestorm">icestorm</a>. These are all open source tools that you can invoke from the command line, you don&rsquo;t need a GUI (so I don&rsquo;t need to run Vivado in a VM) and the time to build is <em>much, much</em> faster than the few minutes it takes to get a synthesis to fail with obscure errors in Vivado. This really sped me up because I am not disciplined and instead of inspecting my code for errors ahead of time, I tend to compile, patch, and iterate until it builds.</p>
+<p>For debugging I used PulseView (part of <a href="https://sigrok.org/">sigrok</a>) when debugging real signals, and GTKwave to look at my simulated waveforms.</p>
+<p>For hardware, I obviously used the iCEBreaker, as well as the <a href="https://www.olimex.com/Products/ARM/NXP/LPC-P1343/">Olimex target board</a>. My bench top supply is a DC50V5A, a cheap but handy configurable buck converter I got on Ali express. While I have a Saleae, I prefer Sigrok, and at the speeds I was running things at, a cheap 24MHz logic analyzer was enough. In the end I had some troubles debugging something using that alone and borrowed an oscilloscope, but in hindsight it wasn&rsquo;t necessary, just nice to have.</p>
+<h1 id="design">Design</h1>
+<p>Again, I am just porting over Dmitry&rsquo;s design, so here&rsquo;s the block drawing stolen from his <a href="https://toothless.co/blog/bootloader-bypass-part2/">blog</a>:</p>
+<p><a href="/assets/2019-12-08-glitching/glitcher_block_diagram.png"><img src="/assets/2019-12-08-glitching/glitcher_block_diagram.png" alt="glitcher block diagram"></a></p>
+<p>The tl;dr:</p>
+<ul>
+<li>The <code>cmd</code> module intercepts everything the host computer sends over UART. Based on the first byte it either interprets it as a command for the FPGA, or passes it through to the target.</li>
+<li>The <code>resetter</code> simply holds the reset line down long enough for the target to reset (instead of one cycle).</li>
+<li>The <code>delay</code> module starts counting on reset and waits the configured number of cycles before sending its own signal.</li>
+<li>The <code>trigger</code> module waits for the delay to finish and then tells the pulse module to send a pulse.</li>
+<li>The <code>pulse</code> module is a lot like the delay module, except that it uses a different config, and its output is connected to the power multiplexer.</li>
+</ul>
+<p>This is all controlled by a python script that talks to the UART, first configuring the FPGA, then activating a glitch, and then communicating with the target. It determines whether it can read out the flag, and if it can&rsquo;t, it adjusts the delay and pulse width configs and tries again.</p>
+<p>The FPGA has two inputs: The UART from the host, and the UART from the target board. It has 4 outputs: The UART to the host, the UART to the target board, a reset line to reset the target, and a <code>vout</code> that is used to control the analogue multiplexer, to quickly drop the voltage powering the target board.</p>
+<h1 id="testing">Testing</h1>
+<p>While you can certainly test on a real FPGA, it&rsquo;s very difficult to see what&rsquo;s going on inside the FPGA. You can blink LEDs, or, if you have the hardware, use seven segments displays to output whatever relevant value. I found this very handy and ended up buying a second just so that I could tell both my pulse width and delay count at a glance.</p>
+<p>That said, even with the rather quick tools, flashing and debugging with a logic analyzer is a lot slower than ideal. I suggest setting up a good test bench and run simulations.</p>
+<h2 id="simulation">Simulation</h2>
+<p>I used <a href="http://iverilog.icarus.com/">Icarus Verilog</a> to simulate the various modules, and <a href="http://gtkwave.sourceforge.net/">GTKWave</a> to look at the waveforms it generates. The basic idea is that you write extra verilog that simulates the inputs to your top module, and then verify that behaviour of the internal signals are as expected. As opposed to running on real hardware, it&rsquo;s easy to introspect any internal value any any point in time. You can also write test benches for any individual module, ensure that each part is behaving as expected before combining them together.</p>
+<p>Here we see my simulation of the whole glitcher, I send a few configurations, and then some commands that should be passed through to the target.</p>
+<p><a href="/assets/2019-12-08-glitching/glitcher_testbench_cmds.png"><img src="/assets/2019-12-08-glitching/glitcher_testbench_cmds.png" alt="glitcher commands simulation"></a></p>
+<p>And here is what happens when the glitch command is sent. We see the reset line go down, then there is a delay based on the delay configuration we previously set, and the <code>vout</code> line goes low for a period of time determined by the pulse width configuration.</p>
+<p><a href="/assets/2019-12-08-glitching/glitcher_testbench_pulse.png"><img src="/assets/2019-12-08-glitching/glitcher_testbench_pulse.png" alt="glitcher pulse simulation"></a></p>
+<p>While a simulation is good, the real test is when you see it work on real hardware, which I was able to see here with my logic analyzer:</p>
+<p><a href="/assets/2019-12-08-glitching/glitcher_logic_analyzer.png"><img src="/assets/2019-12-08-glitching/glitcher_logic_analyzer.png" alt="glitcher logic analyzer dump"></a></p>
+<h1 id="troubles">Troubles</h1>
+<p>The Olimex board actually runs faster than my FPGA, and in training our FPGA was more than 8 times faster. In practice our successful glitch had a very short pulse, in the tens of cycles (at 100MHz). With a 12MHz clock (I thought) I was in trouble. There is significantly less granularity in pulse widths, and we risk the ideal pulse width between somewhere between a n cycles and (n+1) cycles.</p>
+<p>I tried to fix this by using a <a href="https://en.wikipedia.org/wiki/Phase-locked_loop">PLL</a> which allows you to generate a clock that is faster than the input clock by some multiple. Again, icestorm to the rescue here, I was able to use <code>icepll</code> to generate most of the code needed to generate a 48MHz clock from a 12MHz input.</p>
+<p>I kept most modules on the main clock, but fed my new <code>fast_clk</code> to the pulse module. I adjusted my testbench to generate the faster clock and was able to verify that I could generate shorter pulses (with four times the granularity). I actually found a bug in my pulse module here: Since my pulse module was running on a clock four times faster than the rest of the system, including the module that enables the pulse, with short width values my pulse was ending <em>before the enable signal was unset</em>. This was causing the pulse module to immediately start a second pulse. I fixed this by adding an extra state to the module that made it wait until after the enable signal was unset before returning to the waiting state.</p>
+<p>Unfortunately, when I ran this on real hardware, I found that my pulse width seemed to be consistently the same value. I was unable to debug this and decided to see if I could get the glitch to work without the finer granularity (spoiler: I could).</p>
+<h1 id="running-it-in-real-life">Running it in real life</h1>
+<p>Once I had my simulation looking good, and I was able to see that the behaviour in the real world looked like what I was expecting, it was time to actually glitch the board.</p>
+<h2 id="modifying-the-board">Modifying the board</h2>
+<p>To have the CPU misread the lock value we want the voltage to drop at precisely the time when it&rsquo;s reading the appropriate address from flash. Because there are decoupling capacitors on the board, which would smooth out any abrupt voltage change and make this a lot more difficult, I had to remove those capacitors. I also cut traces between the board&rsquo;s voltage regulator and the VCC and VCCIO, so that it&rsquo;s powered exclusively from the output of my analogue multiplexer. This is all well documented in the third part of <a href="https://toothless.co/blog/bootloader-bypass-part3/#modifying-the-target">Dmitry&rsquo;s blog series</a>.</p>
+<h2 id="determining-the-supply-voltage">Determining the supply voltage</h2>
+<p>Because we don&rsquo;t live in a frictionless vacuum where infinitely fast changes in voltage are possible, even without decoupling capacitors the CPU won&rsquo;t see an instantaneous change in voltage when we toggle <code>vout</code>. Because of this, we want to minimize the time the voltage change happens, and so we run the board at the lowest voltage we can find where the board behaves normally.</p>
+<p>For me this was 2.30V, which I determined by running a loop where I continuously reset the board and then tried to communicate with the bootloader. I adjusted the voltage on my benchtop supply while this was running until it was just barely high enough to reliably read &ldquo;Synchronized&rdquo; after sending the &ldquo;?&rdquo; bootloader command. The glitch voltage for my setup was simply 0V, but this was mostly due to me only having a single channel power supply. You might be able to more reliably reproduce the glitch if instead of glitching between X and 0 you glitch between X and Y, but if I got it to work with 0V, you can, too.</p>
+<h2 id="the-moment-of-truth">The moment of truth</h2>
+<p>I hooked up the reset line of my FPGA to the reset on the board, hooked up <code>vout</code> to the control pin of the multiplexer, tied <code>Vglitch</code> to ground, and then tied <code>Vcc</code> to the 2.3V I determined as the minimum stable voltage.</p>
+<p><a href="/assets/2019-12-08-glitching/glitcher_setup.jpg"><img src="/assets/2019-12-08-glitching/glitcher_setup.jpg" alt="glitcher setup"></a></p>
+<p>A friend from work let me borrow his oscilloscope, so I was able to see in real time the reset signal followed by the vout signal pulsing and the corresponding voltage drop in <code>Vcc</code>.</p>
+<p><a href="/assets/2019-12-08-glitching/glitcher_scope.jpg"><img src="/assets/2019-12-08-glitching/glitcher_scope.jpg" alt="oscilloscope view"></a></p>
+<p>The yellow line is the reset signal, which is held low for 5uS, and then <code>vout</code>, the cleaner purple signal, is toggled <em>delay</em> cycles later, for <em>pulse width</em> cycles. The cyan signal is the actual voltage seen, which we can see is &lsquo;dirtier&rsquo; than the purely logic-level <code>vout</code> signal.</p>
+<p>Given enough time you can basically brute force any combination of delay and width, but knowing that the board boots in under 100uS and knowing that with pulses too wide we never get a stable system I played with delays between 60 and 1200 cycles (5uS to 100uS) and pulses between 1 and 25 cycles.</p>
+<p>I then ran my script, which brute forced through the range of delay and pulse width values until I was treated to a nice dump of the flash I was not supposed to read! You can see in the video below that the width of the pulse get wider until it reaches its max, at which point the delay is incremented and the width values are all tried again.</p>
+<!-- raw HTML omitted -->
+<!-- raw HTML omitted -->
+<p>And with a certain width and delay (15 and 680 in my case) our script dumps out the flash!</p>
+<p><a href="/assets/2019-12-08-glitching/glitcher_success.png"><img src="/assets/2019-12-08-glitching/glitcher_success.png" alt="glitcher pulse simulation"></a></p>
+<p>If we look at the lock value at 0x2fc, we see that it&rsquo;s 0x12345678 as we expect:</p>
+<p><a href="/assets/2019-12-08-glitching/glitcher_lockvalue.png"><img src="/assets/2019-12-08-glitching/glitcher_lockvalue.png" alt="glitcher pulse simulation"></a></p>
+<p>We don&rsquo;t see a glitched out value because this dump is <em>after</em> we&rsquo;ve glitched the bootloader, with the voltage back at its stable value. At this point in time the bootloader has already (incorrectly) determined that the bootloader is unlocked, and so all subsequent reads succeed. We don&rsquo;t know exactly what happened during the glitch: The read could have misread the value from flash, the comparator could have mis-behaved, the conditional flag could have not been set, the jump instruction could have been skipped, or countless other weird things. What we do know, however, is that we got what we want: The bootloader running stably in a state where it thinks the flash isn&rsquo;t locked down.</p>
+<p>Of course in real life things didn&rsquo;t go this smoothly, while testing it out I found a bunch of bugs, including how if my delay was too short it would send a pulse while the reset was still low and my pulse width counter had an off-by-one in counting its cycles, among other things, so don&rsquo;t worry if you try this and have issues as well: Isolate the issue, make sure your simulation works, compare to real life, and debug.</p>
+<h2 id="conclusions">Conclusions</h2>
+<p>I found this to be a really fun personal project. I find repetition key to remembering things, and so rewriting modules I had written months ago, relearning Verilog syntax, and hitting the same issues while debugging (hopefully) helped me to remember it for next time.</p>
+<p>On the FPGA side, the open source tool chain I used for the FPGA stuff was very easy to use, and being able to quickly build both simulations and the real bitstream helped me iterate a lot more quickly. It was well worth my time to get my Makefile running nicely.</p>
+<p>On the glitching side, I found that it really demystified the whole thing for me. If I can whip up something that is apparently precise enough to (sort of) reliably glitch a target board running in the dozens of MHz, I must be doing something right.</p>
+<p>I wouldn&rsquo;t have been able to do this without a lot of help from Dmitry. Even now months after taking his training he was willing to help me with whatever dumb questions I have. Seriously consider taking his <a href="https://advancedsecurity.training/">training</a>. I had Dmitry look at this post before publishing and he offered a discount code! So if you sign up use the code <code>grazfather</code> for 5% off!</p>
+<p>Since I was simultaneously trying to figure out glitching stuff while also re-learning Verilog <em>and</em> trying to do it in a new ecosystem, I needed and received lot of help from the nice people on the 1bitsquared discord, so big thanks to them! If you&rsquo;re looking for your own FPGA board, I can&rsquo;t recommend the <a href="https://www.crowdsupply.com/1bitsquared/icebreaker-fpga">iCEBreaker</a> enough!</p>
+<p>My code is available on <a href="https://github.com/Grazfather/glitcher">github</a>, which includes the verilog to configure the FPGA, as well as the python script used to orchestrate everything. It&rsquo;s heavily based on nedos&rsquo;s <a href="https://github.com/toothlessco/arty-glitcher">own version</a>.</p>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2018-11-24-microcorruption-hollywood/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

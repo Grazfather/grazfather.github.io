@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Google CTF - Mobile 150 - Ill Intentions 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Google CTF - Mobile 150 - Ill Intentions</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON MAY 2, 2016 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/ctf">CTF</a>, 
+      
+      <a class="meta" href="/categories/mobile">MOBILE</a>, 
+      
+      <a class="meta" href="/categories/re">RE</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents"></nav>
+    
+    <p>The timing for this challenge was just about perfect for me. A new colleague of mine just last week did a presentation on smali basics and debugging Android Applications using IDA. Before that I had only done some of the most basic patches in smali and no real dynamic stuff other than with <code>am</code> or purpose-built apps.</p>
+<p>My process for an APK is pretty simple: Unzip, <code>dex2jar</code>, and <code>apktool -d</code>. This yields a <em>.jar</em> file you can look at with JD-GUI and the smali code if you need to make changes. It also converts the <em>AndroidManifest.xml</em> back into a readable format.</p>
+<p>Peeking at the manifest, we see that it defines two permissions, _ctf.permission.<em>MSG</em>, which has the level &lsquo;signature&rsquo;, and _ctf.permission.<em>SEND</em>. There are also a few activities defined: <em>com.example.application.IsThisTheRealOne</em>, <em>&hellip;ThisIsTheRealOne</em>, and <em>&hellip;DefinitelyNotThisOne</em>. Finally, it defines a receiver <em>com.example.application.Send_to_Activity</em>.</p>
+<p>Popping the jar into JD-GUI, we first peek at the <em>MainActivity</em>. Super simple: Nothing on the UI but some text, and the <em>Send_to_Activity</em> receiver is registered, filtering on <em>com.ctf.INCOMING_INTENT</em>, and requiring the first custom &lsquo;MSG&rsquo; permission.</p>
+<p>In <em>Send_to_Activity</em>&rsquo;s <code>onReceive</code> message we see that it checks the received intent for a string extra named &ldquo;msg&rdquo;, and uses it to select which activity to send an intent to.</p>
+<p>It&rsquo;s in the three activities that are sent to that where things get interesting. All three look about the same, with small variations: Get some string, munge it up (using some native functions <code>computeFlag</code> and <code>definitelyNotThis</code> from <em>libhello-jni.so</em>), and then send a broadcast intent with the result. Because it doesn&rsquo;t take any input from us, we can assume that one of these must generate the flag, and it&rsquo;s only a matter of &lsquo;catching&rsquo; the output.</p>
+<p><img src="/assets/2016-05-02-Google-CTF-Mobile-150-Ill-Intentions-code.png" alt="onClick method"></p>
+<p>Let&rsquo;s play around to make sure we have the correct understanding of what&rsquo;s going on. Installing the apk on my phone, I opened each of the activities using <code>am</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">shell@A0001:/ $ su
+root@A0001:/ <span style="color:#75715e"># am start -n com.example.hellojni/com.example.application.MainActivity</span>
+Starting: Intent <span style="color:#f92672">{</span> cmp<span style="color:#f92672">=</span>com.example.hellojni/com.example.application.MainActivity <span style="color:#f92672">}</span>
+root@A0001:/ <span style="color:#75715e"># am start -n com.example.hellojni/com.example.application.IsThisTheRealOne</span>
+Starting: Intent <span style="color:#f92672">{</span> cmp<span style="color:#f92672">=</span>com.example.hellojni/com.example.application.IsThisTheRealOne <span style="color:#f92672">}</span>
+root@A0001:/ <span style="color:#75715e"># am start -n com.example.hellojni/com.example.application.ThisIsTheRealOne</span>
+Starting: Intent <span style="color:#f92672">{</span> cmp<span style="color:#f92672">=</span>com.example.hellojni/com.example.application.ThisIsTheRealOne <span style="color:#f92672">}</span>
+root@A0001:/ <span style="color:#75715e"># am start -n com.example.hellojni/com.example.application.DefinitelyNotThisOne</span>
+Starting: Intent <span style="color:#f92672">{</span> cmp<span style="color:#f92672">=</span>com.example.hellojni/com.example.application.DefinitelyNotThisOne <span style="color:#f92672">}</span></code></pre></div>
+<p>Although it took longer than I&rsquo;d like to admit to get the syntax correct in <code>am</code>, once I had the above commands, I could switch between the activites with ease. The last three activities render on screen with nothing but a big button. Tappind the button executes the code that computes and broadcasts the flag. Note that we never had to use <em>Send_to_Activity</em>. We <em>could</em> have used it just the same:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">root@A0001:/ <span style="color:#75715e"># am broadcast -a com.ctf.INCOMING_INTENT --es msg &#34;IsThisTheRealOne&#34;</span>
+Broadcasting: Intent <span style="color:#f92672">{</span> act<span style="color:#f92672">=</span>com.ctf.INCOMING_INTENT <span style="color:#f92672">(</span>has extras<span style="color:#f92672">)</span> <span style="color:#f92672">}</span>
+Broadcast completed: result<span style="color:#f92672">=</span><span style="color:#ae81ff">0</span></code></pre></div>
+<p>Now that we know how to control the app and have a pretty good idea of how the flag is generated, there are a few ways to approach this:</p>
+<ol>
+<li>We can write an app that has a receiver that filters on <em>com.ctf.OUTGOING_INTENT</em> and logs what it receives.</li>
+<li>We can debug the app and just set a breakpoint on each call to <code>putExtra</code>.</li>
+</ol>
+<p>Because I don&rsquo;t feel like writing java (I never do), I&rsquo;ll go with the latter. The former requires signing the new app with the same key (because of the &lsquo;signature&rsquo; level on the permission), but we could get around that by simply re-signing the original app with our own key. The latter requires we change the <em>AndroidManifest.xml</em> to set <code>debuggable</code> to true. This also requires re-signing the app (so we can reinstall it) but that&rsquo;s trivial.</p>
+<ol>
+<li>Edit <em>AndroidManifest.xml</em>: <code>&lt;application android:icon=&quot;@mipmap/ic_launcher&quot; android:label=&quot;CTF Application&quot; android:debuggable=&quot;true&quot;&gt;</code></li>
+<li>Build a new apk: <code>apktool b</code></li>
+<li>Create some bogus key: <code>keytool -genkey -v -keystore my-release-key.keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000</code></li>
+<li>Sign the apk: <code>jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ./my-release-key.keystore illintentions.apk alias_name</code></li>
+<li>Uninstall the old app (from the UI).</li>
+<li>Install the new one: <code>adb install illintentions.apk</code></li>
+</ol>
+<p>Now I load up the APK in IDA, navigate to the <code>onClick</code> methods in each activity, set a breakpoint, follow the instructions <a href="https://www.hex-rays.com/products/ida/support/tutorials/debugging_dalvik.pdf">here</a>, and start the application in the debugger.</p>
+<p><img src="/assets/2016-05-02-Google-CTF-Mobile-150-Ill-Intentions-bp.png" alt="Breakpoint"></p>
+<p>Once IDA has connected to the application (just skipping past the auto-set bps), and the app is running, I use <code>am</code> again to send one of the intents, then tap on the button that shows up. IDA should break immediately. Now at this point we see that the output of <code>perhapsThis</code>, which is fed directly to <code>putExtra</code> is stored in <code>v6</code>. Opening the &lsquo;Watch&rsquo; view (Debugger -&gt; Debugger windows -&gt; Watch view), I simply created a new watch on <code>v6</code> that casts it to <code>Object *</code>.</p>
+<p><img src="/assets/2016-05-02-Google-CTF-Mobile-150-Ill-Intentions-flag.png" alt="Flag"></p>
+<p>(Yes, I got lucky and chose the correct activity on my first try).</p>
+<p>flag: CTF{IDontHaveABadjokeSorry}</p>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-04-01-reading-february-march-2016/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2016-06-01-reading-april-may-2016/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>pwn on Grazfather</title>
+    <link>https://grazfather.github.io/categories/pwn/</link>
+    <description>Recent content in pwn on Grazfather</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Sun, 08 Dec 2019 12:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://grazfather.github.io/categories/pwn/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Glitching the Olimex LPC-P1343</title>
+      <link>https://grazfather.github.io/posts/2019-12-08-glitcher/</link>
+      <pubDate>Sun, 08 Dec 2019 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2019-12-08-glitcher/</guid>
+      <description>Back in the summer I was lucky enough to finagle my boss into letting me take Dmitry Nedospasov (@nedos)&amp;rsquo;s hardware hacking training. In it I cut my teeth on using an FPGA to interface with target hardware. After implementing a UART we implemented a module that could parse part of Apple&amp;rsquo;s OneWire, used to negotiate power exchange, among other things, with your iPhone over the lightning cable. Our &amp;lsquo;final project&amp;rsquo; was to build a UART-controllable glitcher, using it to try to glitch a development board.</description>
+    </item>
+    
+    <item>
+      <title>CTF(x) - Binary 250 - Dat Boinary</title>
+      <link>https://grazfather.github.io/posts/2016-08-28-ctfx-dat-boinary/</link>
+      <pubDate>Sun, 28 Aug 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-08-28-ctfx-dat-boinary/</guid>
+      <description>For this challenge we&amp;rsquo;re provided the binary and a libc.so.6 binary. Just by being provided this second binary we are hinted that we will need some fuctionality from it: Rop or ret2libc probably.
+[grazfather ~/code/CTFs/ctfx]$ file dat-boinary dat-boinary: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, not stripped I&amp;rsquo;ve recently bought the personal edition of Binary Ninja, and so will be using it for most of my static analysis.</description>
+    </item>
+    
+    <item>
+      <title>Boston Key Party - PWN 5 ‘Complex Calc’</title>
+      <link>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-complex-calc/</link>
+      <pubDate>Sun, 06 Mar 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-complex-calc/</guid>
+      <description>Taking a quick look at this binary, we see it&amp;rsquo;s almost idenfical to the &amp;lsquo;Simple Calc&amp;rsquo;. Testing my ROP chain on it, however, crashes in free: It looks like free(0) won&amp;rsquo;t fly anymore.
+To confirm that my ROP was still valid, I set a breakpoint on the call to free and manually wrote the pointer to the original buffer into RDI. With this, my ROP indeed did work and I could focus on passing the free call.</description>
+    </item>
+    
+    <item>
+      <title>Boston Key Party - PWN 5 ‘Simple Calc’</title>
+      <link>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/</link>
+      <pubDate>Sun, 06 Mar 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/</guid>
+      <description>Running strings we see this is a x86_64 binary statically compiled, which should make things a lot easier for us.
+vagrant@kali:/vagrant/ctfs/bostonkp2016$ file simplecalc simplecalc: ELF 64-bit LSB executable, x86-64, version 1 (GNU/Linux), statically linked, for GNU/Linux 2.6.24, BuildID[sha1]=0x0676a83cc38d2b9b20c612f4d7a19255eaa93b52, not stripped Running the application, with IDA open on the side to quickly get past any restriction, I see that this program simply takes some number of calculations and then for each it allows you to choose wish operation to perform and the two operands.</description>
+    </item>
+    
+  </channel>
+</rss>

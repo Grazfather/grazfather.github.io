@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+
+
+
+<title>
+  Grazfather - Microcorruption Hollywood 
+</title>
+
+<meta name="generator" content="Hugo 0.73.0" />
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css">
+
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300,400|Roboto+Slab:400,700|Roboto:300,300i,400,400i,500,500i,700,700i">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+<link rel="stylesheet" href="https://grazfather.github.io/css/main.css">
+<link rel="stylesheet" href="https://grazfather.github.io/css/custom.css">
+
+
+
+
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+<link rel="manifest" href="/manifest.json">
+<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+<meta name="theme-color" content="#ffffff">
+
+</head>
+<body lang="en-US">
+<div class="container">
+
+
+<header class="row text-left title">
+  <h1 class="title">Microcorruption Hollywood</h1>
+</header>
+<section id="category-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-left meta">
+        PUBLISHED ON NOV 24, 2018 
+      
+      
+      
+      —
+      
+      
+      <a class="meta" href="/categories/ctf">CTF</a>, 
+      
+      <a class="meta" href="/categories/re">RE</a>
+      
+      
+      
+    </h6>
+  </div>
+  
+</section>
+<section id="content-pane" class="row">
+  <div class="col-md-12 text-justify content">
+    
+    <nav id="TableOfContents"></nav>
+    
+    <p>I&rsquo;m a <em>few</em> years late to the party here, but I&rsquo;ve recently managed to finish <a href="http://microcorruption.com">Microcorruption</a>. I had finished most of the challenges back in 2014, when they were released, but not having IDA back then, I was stumped when the first challenge that relocated showed up, because it broke the online disassembler, and I was helpless without it :).</p>
+<p>I recently took another look, having picked up some skill and knowledge in the intervening years. <em>Hollywood</em>, the last challenge, was a very interesting challenge, and I found that most writeups I found online glossed over the difficulty of getting something coherent out of it, so I figured I would try to add a writeup that goes into more detail.</p>
+<p>The challenge is a simple prompt for the password, and the CPU just halts on improper input. Looking at the disassembly output was useless, since the web disassembler just disassembles linearly, and they used jumps to jump over a few, uesless bytes, but these bytes were disassembled as six-byte opcodes, hiding the actual instruction.</p>
+<p>Linear web disassembly:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm"><span style="color:#960050;background-color:#1e0010">4400:</span>  <span style="color:#960050;background-color:#1e0010">013</span><span style="color:#a6e22e">c</span>           <span style="color:#66d9ef">jmp</span>       <span style="color:#75715e">#0x4404 &lt;main+0x4&gt;
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">4402</span>:  <span style="color:#66d9ef">d1a1</span> <span style="color:#ae81ff">3140</span> <span style="color:#ae81ff">0044</span> <span style="color:#66d9ef">dadd.b</span>    <span style="color:#ae81ff">0x4031</span>(<span style="color:#66d9ef">sp</span>), <span style="color:#ae81ff">0x4400</span>(<span style="color:#66d9ef">sp</span>)
+<span style="color:#960050;background-color:#1e0010">4408:</span>  <span style="color:#960050;background-color:#1e0010">013</span><span style="color:#a6e22e">c</span>           <span style="color:#66d9ef">jmp</span>       <span style="color:#75715e">#0x440c &lt;main+0xc&gt;
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">440</span><span style="color:#66d9ef">a</span>:  <span style="color:#66d9ef">d1a1</span> <span style="color:#ae81ff">1542</span> <span style="color:#ae81ff">5</span><span style="color:#66d9ef">c01</span> <span style="color:#66d9ef">dadd.b</span>    <span style="color:#ae81ff">0x4215</span>(<span style="color:#66d9ef">sp</span>), <span style="color:#ae81ff">0x15c</span>(<span style="color:#66d9ef">sp</span>)</code></pre></div></p>
+<p>IDA&rsquo;s disassembly:
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm">ROM:<span style="color:#960050;background-color:#1e0010">00004400</span> <span style="color:#75715e">; ---------------------------------------------------------------------------
+</span><span style="color:#75715e"></span>ROM:<span style="color:#960050;background-color:#1e0010">00004400</span>                 <span style="color:#a6e22e">jmp</span>     <span style="color:#66d9ef">loc_4404</span>
+ROM:<span style="color:#960050;background-color:#1e0010">00004400</span> <span style="color:#75715e">; ---------------------------------------------------------------------------
+</span><span style="color:#75715e"></span>ROM:<span style="color:#960050;background-color:#1e0010">00004402</span>                 <span style="color:#a6e22e">.byte</span> <span style="color:#ae81ff">0</span><span style="color:#66d9ef">D1h</span>
+ROM:<span style="color:#960050;background-color:#1e0010">00004403</span>                 <span style="color:#a6e22e">.byte</span> <span style="color:#ae81ff">0</span><span style="color:#66d9ef">A1h</span>
+ROM:<span style="color:#960050;background-color:#1e0010">00004404</span> <span style="color:#75715e">; ---------------------------------------------------------------------------
+</span><span style="color:#75715e"></span>ROM:<span style="color:#960050;background-color:#1e0010">00004404</span>
+ROM:<span style="color:#960050;background-color:#1e0010">00004404</span> loc_4404:                               <span style="color:#75715e">; CODE XREF: ROM:00004400↑j
+</span><span style="color:#75715e"></span>ROM:<span style="color:#960050;background-color:#1e0010">00004404</span>                 <span style="color:#a6e22e">mov.w</span>   <span style="color:#75715e">#4400h, SP
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">ROM</span>:<span style="color:#ae81ff">00004408</span>                 <span style="color:#66d9ef">jmp</span>     <span style="color:#66d9ef">loc_440C</span>
+ROM:<span style="color:#960050;background-color:#1e0010">00004408</span> <span style="color:#75715e">; ---------------------------------------------------------------------------
+</span><span style="color:#75715e"></span>ROM:<span style="color:#960050;background-color:#1e0010">0000440</span><span style="color:#a6e22e">A</span>                 <span style="color:#66d9ef">.byte</span> <span style="color:#ae81ff">0</span><span style="color:#66d9ef">D1h</span>
+ROM:<span style="color:#960050;background-color:#1e0010">0000440</span><span style="color:#a6e22e">B</span>                 <span style="color:#66d9ef">.byte</span> <span style="color:#ae81ff">0</span><span style="color:#66d9ef">A1h</span>
+ROM:<span style="color:#960050;background-color:#1e0010">0000440</span><span style="color:#a6e22e">C</span> <span style="color:#960050;background-color:#1e0010">;</span> ---------------------------------------------------------------------------</code></pre></div></p>
+<p>Using a script I found online, I was able to convert the memory dump into a binary blob, which I could then import into IDA, selecting Texas Instrument MSP430 as the CPU type. Following through this code you see that the code relocates and seems to unpack. No problem, I just ran it in the web debugger until it prompted me for input, then I copied <em>that</em> memory dump, created a new binary, and analyzed that in IDA.</p>
+<p>There were two problems with this approach. First, it used the <code>rand</code> syscall, so where the code was unpacked to was non-deterministic, and would change between runs. This meant that I couldn&rsquo;t follow along in both IDA and the web disassembler. The second problem was that the program seems to relocate again. Stepping through until it jumps to the next spot, I figured I could just generate another dump when the program was fully unpacked. I generated a new binary, stepped through that, generated another, stepped through that&hellip; I did this twelve times before I figured out that there was probably no end in sight. Time to bust out the tooling.</p>
+<p>I found a <a href="https://github.com/cemeyer/msp430-emu-uctf">MSP430 emulator</a>, specifically one that implements all the idiosyncrasies and syscalls of the Microcorruption MSP430. I could run the original dumped rom through this and generate a trace, then I could use another <a href="https://github.com/Cixelyn/msp430-trace-disassembler">python script</a> to disassemble the trace. Problem: the trace was over half a million instructions, and since it&rsquo;s just a disassembly listing, I had to look at it linearly.</p>
+<p>Figuring that this was a multi-stage unpacker, I had another idea: I would modify the emulator to write every executed instruction to a binary file, at the address of its PC. The goal being to end up with a rom that has each stage of the unpacker present. Since I was not committing writes to the file, but instead just what was executed, I would not wipe out old stages. A simple change to the emulator to create a sparse file, then for each instruction executed, seek to the PC, and write the opcode bytes to the file accomplished this goal.</p>
+<p>Now with this full ROM I could get to reverse engineering the code that matters. Popping the binary into IDA showed an unpacking stage at 0x4400 (The entry point), 0x5000, and 0x8000. These nice addresses led me to figure out that my emulator always returned zero from the <code>rand</code> syscall, definitely convenient. When running on the online debugger the stages were scattered somewhere on each of these pages.</p>
+<p>Reversing the binary was mostly straight forward in IDA, since it isn&rsquo;t a linear sweep disassembler it wasn&rsquo;t tricked by jumps into instructions. There were many basic blocks that apparently had no path to them, but that was because of another trick: Instead of calling a function, they would push PC, branch to the function, then pop the PC, increment it, and jump back to it, effectively returning to where it had started. IDA didn&rsquo;t recognize this, but it just meant that the control flow returned to the next basic block.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm">ROM:<span style="color:#960050;background-color:#1e0010">00004508</span> <span style="color:#75715e">; ---------------------------------------------------------------------------
+</span><span style="color:#75715e"></span>ROM:<span style="color:#960050;background-color:#1e0010">00004508</span>                 <span style="color:#a6e22e">mov.w</span>   <span style="color:#66d9ef">R15</span>, <span style="color:#ae81ff">8</span>(<span style="color:#66d9ef">R12</span>)
+ROM:<span style="color:#960050;background-color:#1e0010">0000450</span><span style="color:#a6e22e">C</span>                 <span style="color:#66d9ef">mov.w</span>   <span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">R10</span><span style="color:#960050;background-color:#1e0010">+</span>, <span style="color:#66d9ef">R15</span>
+ROM:<span style="color:#960050;background-color:#1e0010">0000450</span><span style="color:#a6e22e">E</span>                 <span style="color:#66d9ef">push.w</span>  <span style="color:#66d9ef">PC</span>
+ROM:<span style="color:#960050;background-color:#1e0010">00004510</span>                 <span style="color:#a6e22e">jmp</span>     <span style="color:#66d9ef">loc_45BE</span>        <span style="color:#75715e">; Basically a call
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">ROM</span>:<span style="color:#ae81ff">00004512</span> <span style="color:#75715e">; ---------------------------------------------------------------------------
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">ROM</span>:<span style="color:#ae81ff">00004512</span>                 <span style="color:#66d9ef">mov.w</span>   <span style="color:#66d9ef">R15</span>, <span style="color:#ae81ff">0</span><span style="color:#66d9ef">Ah</span>(<span style="color:#66d9ef">R12</span>)
+ROM:<span style="color:#960050;background-color:#1e0010">00004516</span>                 <span style="color:#a6e22e">mov.w</span>   <span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">R10</span><span style="color:#960050;background-color:#1e0010">+</span>, <span style="color:#66d9ef">R15</span>
+ROM:<span style="color:#960050;background-color:#1e0010">00004518</span>                 <span style="color:#a6e22e">push.w</span>  <span style="color:#66d9ef">PC</span>
+ROM:<span style="color:#960050;background-color:#1e0010">0000451</span><span style="color:#a6e22e">A</span>                 <span style="color:#66d9ef">jmp</span>     <span style="color:#66d9ef">loc_45BE</span>        <span style="color:#75715e">; Basically a call
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">...</span>
+ROM:<span style="color:#960050;background-color:#1e0010">0000460</span><span style="color:#a6e22e">A</span> <span style="color:#66d9ef">loc_460A</span>:                               <span style="color:#75715e">; CODE XREF: sub_4400+206↑j
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">ROM</span>:<span style="color:#ae81ff">0000460</span><span style="color:#66d9ef">A</span>                 <span style="color:#66d9ef">pop</span>     <span style="color:#66d9ef">R14</span>             <span style="color:#75715e">; Pop the PC that was pushed earlier
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">ROM</span>:<span style="color:#ae81ff">0000460</span><span style="color:#66d9ef">C</span>                 <span style="color:#66d9ef">incd.w</span>  <span style="color:#66d9ef">R14</span>             <span style="color:#75715e">; Increment it to the next instruction
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">ROM</span>:<span style="color:#ae81ff">0000460</span><span style="color:#66d9ef">E</span>                 <span style="color:#66d9ef">jmp</span>     <span style="color:#66d9ef">loc_4612</span>
+ROM:<span style="color:#960050;background-color:#1e0010">0000460</span><span style="color:#a6e22e">E</span> <span style="color:#75715e">; ---------------------------------------------------------------------------
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">ROM</span>:<span style="color:#ae81ff">00004610</span>                 <span style="color:#66d9ef">.byte</span>    <span style="color:#ae81ff">0</span>
+ROM:<span style="color:#960050;background-color:#1e0010">00004611</span>                 <span style="color:#a6e22e">.byte</span>    <span style="color:#ae81ff">0</span>
+ROM:<span style="color:#960050;background-color:#1e0010">00004612</span> <span style="color:#75715e">; ---------------------------------------------------------------------------
+</span><span style="color:#75715e"></span>ROM:<span style="color:#960050;background-color:#1e0010">00004612</span>
+ROM:<span style="color:#960050;background-color:#1e0010">00004612</span> loc_4612:                               <span style="color:#75715e">; CODE XREF: sub_4400+20E↑j
+</span><span style="color:#75715e"></span>ROM:<span style="color:#960050;background-color:#1e0010">00004612</span>                 <span style="color:#a6e22e">br</span>      <span style="color:#66d9ef">R14</span>             <span style="color:#960050;background-color:#1e0010">;</span> <span style="color:#66d9ef">Return</span></code></pre></div>
+<p>Reversing these three &lsquo;unpackers&rsquo; showed about the same thing: It would copy some bytes to a random location, decrypt them, and then ultimately jump to them, then finally return and wipe out the instructions - Lucky for me I could see these ephemeral instructions because, remember, I only write <em>executed</em> bytes to the rom file, not written bytes. Whenever a stage of the unpacker was done, it would jump to <code>eXXX</code>, where XXX is <code>rand &amp; 0xFFE</code>. Because the emulator always returned 0 from the <code>rand</code> syscall, this was always exactly <code>0xe000</code>. That meant that the few instructions at 0xe000 weere just the <em>last</em> few that executed, and I was missing the actual code.</p>
+<p>Taking a step back, I realized that everything I had reversed was only the unpacked. There was no hint of the prompt or the password validation. Staring at this for some time it hit me: This isn&rsquo;t an unpacker, it&rsquo;s more of a VM! A few instructions are unpacked, jumped to, wiped out, and then this is repeated. <em>Everything</em> that mattered was executed at 0xeXXX.</p>
+<p>Back to the emulator, I made another modification that prepended every opcode trace with the address it executes at, and then I modified the disassembler to account for this and print the line with the PC preceding it. I then filtered the output to only keep any address that started with 0xeXXX.</p>
+<p>Boom! Down from half a million instructions to a few hundred! I can reverse this.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm"><span style="color:#a6e22e">e000</span>   <span style="color:#ae81ff">9</span><span style="color:#66d9ef">E1C</span>: <span style="color:#ae81ff">3182</span>      <span style="color:#66d9ef">sub</span>    <span style="color:#75715e">#8, SP
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e002</span>   <span style="color:#ae81ff">9</span><span style="color:#66d9ef">E1D</span>: <span style="color:#ae81ff">3</span><span style="color:#66d9ef">C40</span> <span style="color:#66d9ef">EA49</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x49ea, R12
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e006</span>   <span style="color:#ae81ff">9</span><span style="color:#66d9ef">E1E</span>: <span style="color:#ae81ff">004</span><span style="color:#66d9ef">D</span>      <span style="color:#66d9ef">br</span>     <span style="color:#66d9ef">R13</span>
+<span style="color:#a6e22e">e4c6</span>   <span style="color:#66d9ef">A5B5</span>: <span style="color:#ae81ff">3240</span> <span style="color:#ae81ff">0080</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x8000, SR
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e4ca</span>   <span style="color:#66d9ef">A5B6</span>: <span style="color:#ae81ff">3</span><span style="color:#66d9ef">C40</span> <span style="color:#66d9ef">CA48</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x48ca, R12
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e4ce</span>   <span style="color:#66d9ef">A5B7</span>: <span style="color:#ae81ff">004</span><span style="color:#66d9ef">D</span>      <span style="color:#66d9ef">br</span>     <span style="color:#66d9ef">R13</span>
+<span style="color:#a6e22e">e000</span>   <span style="color:#66d9ef">AD4D</span>: <span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">5700</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x57, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e006</span>   <span style="color:#66d9ef">AD4E</span>: <span style="color:#ae81ff">3</span><span style="color:#66d9ef">C40</span> <span style="color:#ae81ff">8448</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x4884, R12
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e00a</span>   <span style="color:#66d9ef">AD4F</span>: <span style="color:#ae81ff">004</span><span style="color:#66d9ef">D</span>      <span style="color:#66d9ef">br</span>     <span style="color:#66d9ef">R13</span>
+<span style="color:#a6e22e">e000</span>   <span style="color:#66d9ef">B4E6</span>: <span style="color:#66d9ef">B012</span> <span style="color:#ae81ff">1000</span> <span style="color:#66d9ef">call</span>   <span style="color:#75715e">#0x10
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e004</span>   <span style="color:#66d9ef">B4E8</span>: <span style="color:#ae81ff">3</span><span style="color:#66d9ef">C40</span> <span style="color:#ae81ff">584</span><span style="color:#66d9ef">D</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x4d58, R12
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e008</span>   <span style="color:#66d9ef">B4E9</span>: <span style="color:#ae81ff">004</span><span style="color:#66d9ef">D</span>      <span style="color:#66d9ef">br</span>     <span style="color:#66d9ef">R13</span>
+<span style="color:#a6e22e">e000</span>   <span style="color:#66d9ef">BC7F</span>: <span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">6800</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x68, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e006</span>   <span style="color:#66d9ef">BC80</span>: <span style="color:#ae81ff">3</span><span style="color:#66d9ef">C40</span> <span style="color:#ae81ff">9</span><span style="color:#66d9ef">C45</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x459c, R12
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e00a</span>   <span style="color:#66d9ef">BC81</span>: <span style="color:#ae81ff">004</span><span style="color:#66d9ef">D</span>      <span style="color:#66d9ef">br</span>     <span style="color:#66d9ef">R13</span>
+<span style="color:#a6e22e">...</span></code></pre></div>
+<p>That&rsquo;s more fucking like it. The <code>br R13</code> is just the return to the unpacker, and the <code>mov #0xXXXX, R12</code> was just another address used for unpacking. Filter them out!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm"><span style="color:#a6e22e">e000</span>   <span style="color:#ae81ff">9</span><span style="color:#66d9ef">E1C</span>: <span style="color:#ae81ff">3182</span>      <span style="color:#66d9ef">sub</span>    <span style="color:#75715e">#8, SP
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e4c6</span>   <span style="color:#66d9ef">A5B5</span>: <span style="color:#ae81ff">3240</span> <span style="color:#ae81ff">0080</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x8000, SR
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>   <span style="color:#66d9ef">AD4D</span>: <span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">5700</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x57, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>   <span style="color:#66d9ef">B4E6</span>: <span style="color:#66d9ef">B012</span> <span style="color:#ae81ff">1000</span> <span style="color:#66d9ef">call</span>   <span style="color:#75715e">#0x10
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>   <span style="color:#66d9ef">BC7F</span>: <span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">6800</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x68, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>   <span style="color:#66d9ef">C418</span>: <span style="color:#66d9ef">B012</span> <span style="color:#ae81ff">1000</span> <span style="color:#66d9ef">call</span>   <span style="color:#75715e">#0x10
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>   <span style="color:#66d9ef">CBB1</span>: <span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">6100</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x61, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>   <span style="color:#66d9ef">D34A</span>: <span style="color:#66d9ef">B012</span> <span style="color:#ae81ff">1000</span> <span style="color:#66d9ef">call</span>   <span style="color:#75715e">#0x10
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>   <span style="color:#66d9ef">DAE3</span>: <span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">7400</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x74, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>   <span style="color:#66d9ef">E27C</span>: <span style="color:#66d9ef">B012</span> <span style="color:#ae81ff">1000</span> <span style="color:#66d9ef">call</span>   <span style="color:#75715e">#0x10
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>   <span style="color:#66d9ef">EA15</span>: <span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">2700</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x27, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>   <span style="color:#66d9ef">F1AE</span>: <span style="color:#66d9ef">B012</span> <span style="color:#ae81ff">1000</span> <span style="color:#66d9ef">call</span>   <span style="color:#75715e">#0x10
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>   <span style="color:#66d9ef">F947</span>: <span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">7300</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x73, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>  <span style="color:#ae81ff">100</span><span style="color:#66d9ef">E0</span>: <span style="color:#66d9ef">B012</span> <span style="color:#ae81ff">1000</span> <span style="color:#66d9ef">call</span>   <span style="color:#75715e">#0x10
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>  <span style="color:#ae81ff">10879</span>: <span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">2000</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x20, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>  <span style="color:#ae81ff">11012</span>: <span style="color:#66d9ef">B012</span> <span style="color:#ae81ff">1000</span> <span style="color:#66d9ef">call</span>   <span style="color:#75715e">#0x10
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>  <span style="color:#ae81ff">117</span><span style="color:#66d9ef">AB</span>: <span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">7400</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x74, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>  <span style="color:#ae81ff">11</span><span style="color:#66d9ef">F44</span>: <span style="color:#66d9ef">B012</span> <span style="color:#ae81ff">1000</span> <span style="color:#66d9ef">call</span>   <span style="color:#75715e">#0x10
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>  <span style="color:#ae81ff">126</span><span style="color:#66d9ef">DD</span>: <span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">6800</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x68, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">e000</span>  <span style="color:#ae81ff">12</span><span style="color:#66d9ef">E76</span>: <span style="color:#66d9ef">B012</span> <span style="color:#ae81ff">1000</span> <span style="color:#66d9ef">call</span>   <span style="color:#75715e">#0x10
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">...</span></code></pre></div>
+<p>What we are seeing here is the prompt &ldquo;What&rsquo;s the password?&rdquo; being printed, one character at a time. After this is the validation:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm"><span style="color:#a6e22e">...</span>
+<span style="color:#a6e22e">B140</span> <span style="color:#ae81ff">0026</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x2600, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">0001</span> <span style="color:#ae81ff">0800</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x100, 0x8(SP)
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">3240</span> <span style="color:#ae81ff">0082</span>      <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x8200, SR
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">B012</span> <span style="color:#ae81ff">1000</span>      <span style="color:#66d9ef">call</span>   <span style="color:#75715e">#0x10
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">3540</span> <span style="color:#ae81ff">0026</span>      <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x2600, R5
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">0643</span>           <span style="color:#66d9ef">clr</span>    <span style="color:#66d9ef">R6</span>
+
+<span style="color:#a6e22e">rep</span><span style="color:#a6e22e">eats</span> <span style="color:#ae81ff">8</span> <span style="color:#66d9ef">times</span> <span style="color:#960050;background-color:#1e0010">{</span>
+<span style="color:#960050;background-color:#1e0010">2455</span>           <span style="color:#a6e22e">add</span>    <span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">R5</span>, <span style="color:#66d9ef">R4</span>
+<span style="color:#960050;background-color:#1e0010">8410</span>           <span style="color:#a6e22e">swpb</span>   <span style="color:#66d9ef">R4</span>
+<span style="color:#960050;background-color:#1e0010">36</span><span style="color:#a6e22e">E5</span>           <span style="color:#66d9ef">xor</span>    <span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">R5</span><span style="color:#960050;background-color:#1e0010">+</span>, <span style="color:#66d9ef">R6</span>
+<span style="color:#960050;background-color:#1e0010">06</span><span style="color:#a6e22e">E4</span>           <span style="color:#66d9ef">xor</span>    <span style="color:#66d9ef">R4</span>, <span style="color:#66d9ef">R6</span>
+<span style="color:#960050;background-color:#1e0010">04</span><span style="color:#a6e22e">E6</span>           <span style="color:#66d9ef">xor</span>    <span style="color:#66d9ef">R6</span>, <span style="color:#66d9ef">R4</span>
+<span style="color:#960050;background-color:#1e0010">06</span><span style="color:#a6e22e">E4</span>           <span style="color:#66d9ef">xor</span>    <span style="color:#66d9ef">R4</span>, <span style="color:#66d9ef">R6</span>
+<span style="color:#960050;background-color:#1e0010">8593</span> <span style="color:#960050;background-color:#1e0010">0000</span>      <span style="color:#a6e22e">tst</span>    <span style="color:#ae81ff">0x0</span>(<span style="color:#66d9ef">R5</span>)
+<span style="color:#960050;background-color:#1e0010">0742</span>           <span style="color:#a6e22e">mov</span>    <span style="color:#66d9ef">SR</span>, <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">27</span><span style="color:#a6e22e">F3</span>           <span style="color:#66d9ef">and</span>    <span style="color:#75715e">#2, R7
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">0711</span>           <span style="color:#66d9ef">rra</span>    <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">17</span><span style="color:#a6e22e">E3</span>           <span style="color:#66d9ef">xor</span>    <span style="color:#75715e">#1, R7
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">8710</span>           <span style="color:#66d9ef">swpb</span>   <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">0711</span>           <span style="color:#a6e22e">rra</span>    <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">8711</span>           <span style="color:#a6e22e">sxt</span>    <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">8710</span>           <span style="color:#a6e22e">swpb</span>   <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">8711</span>           <span style="color:#a6e22e">sxt</span>    <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">3840</span> <span style="color:#960050;background-color:#1e0010">184</span><span style="color:#a6e22e">B</span>      <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x4b18, R8
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">08</span><span style="color:#66d9ef">F7</span>           <span style="color:#66d9ef">and</span>    <span style="color:#66d9ef">R7</span>, <span style="color:#66d9ef">R8</span>
+<span style="color:#960050;background-color:#1e0010">37</span><span style="color:#a6e22e">E3</span>           <span style="color:#66d9ef">xor</span>    <span style="color:#75715e">#-1, R7
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">37</span><span style="color:#66d9ef">F0</span> <span style="color:#66d9ef">AA47</span>      <span style="color:#66d9ef">and</span>    <span style="color:#75715e">#0x47aa, R7
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">0857</span>           <span style="color:#66d9ef">add</span>    <span style="color:#66d9ef">R7</span>, <span style="color:#66d9ef">R8</span>
+<span style="color:#960050;background-color:#1e0010">0743</span>           <span style="color:#a6e22e">clr</span>    <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">}</span>
+
+<span style="color:#960050;background-color:#1e0010">3490</span> <span style="color:#a6e22e">B1FE</span>      <span style="color:#66d9ef">cmp</span>    <span style="color:#75715e">#0xfeb1, R4
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">0742</span>           <span style="color:#66d9ef">mov</span>    <span style="color:#66d9ef">SR</span>, <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">0443</span>           <span style="color:#a6e22e">clr</span>    <span style="color:#66d9ef">R4</span>
+<span style="color:#960050;background-color:#1e0010">3690</span> <span style="color:#960050;background-color:#1e0010">9892</span>      <span style="color:#a6e22e">cmp</span>    <span style="color:#75715e">#0x9298, R6
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">07</span><span style="color:#66d9ef">F2</span>           <span style="color:#66d9ef">and</span>    <span style="color:#66d9ef">SR</span>, <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">0643</span>           <span style="color:#a6e22e">clr</span>    <span style="color:#66d9ef">R6</span>
+<span style="color:#960050;background-color:#1e0010">0711</span>           <span style="color:#a6e22e">rra</span>    <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">17</span><span style="color:#a6e22e">E3</span>           <span style="color:#66d9ef">xor</span>    <span style="color:#75715e">#1, R7
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">8710</span>           <span style="color:#66d9ef">swpb</span>   <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">0711</span>           <span style="color:#a6e22e">rra</span>    <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">0711</span>           <span style="color:#a6e22e">rra</span>    <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">0711</span>           <span style="color:#a6e22e">rra</span>    <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">0711</span>           <span style="color:#a6e22e">rra</span>    <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">02</span><span style="color:#a6e22e">D7</span>           <span style="color:#66d9ef">bis</span>    <span style="color:#66d9ef">R7</span>, <span style="color:#66d9ef">SR</span></code></pre></div>
+<p>Using this filtered output, I got the original bytes and converted them back to a binary that was only 732 bytes and running this in the emulator worked! That confirmed that I filtered it down to exactly what I needed.
+Looking at this tiny assembly it&rsquo;s easy to see what&rsquo;s happening: Two bytes of the input are checked at a time, and they are mixed into R4, R6, and R8. After the loop runs eight times, the value of R4 and R6 is checked, and then the status register is copied to R7, rotated around, and written back to SR. This is why the CPU was halting: The SR was set to some bogus value. We want 0x7F00 in R7 on the last instruction. The comparison to 0xfeb1 sets the status bits, and to preserve them they have to survive the AND with the status register after the comparison to 0x9298. This means that we need R4 and R6 to equal these values after the loop, meaning everything to do with R7 and R8 in the loop is trash!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-asm" data-lang="asm"><span style="color:#a6e22e">B140</span> <span style="color:#ae81ff">0026</span> <span style="color:#ae81ff">0600</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x2600, 0x6(SP)
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">B140</span> <span style="color:#ae81ff">0001</span> <span style="color:#ae81ff">0800</span> <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x100, 0x8(SP)
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">3240</span> <span style="color:#ae81ff">0082</span>      <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x8200, SR
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">B012</span> <span style="color:#ae81ff">1000</span>      <span style="color:#66d9ef">call</span>   <span style="color:#75715e">#0x10
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">3540</span> <span style="color:#ae81ff">0026</span>      <span style="color:#66d9ef">mov</span>    <span style="color:#75715e">#0x2600, R5
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">0643</span>           <span style="color:#66d9ef">clr</span>    <span style="color:#66d9ef">R6</span>
+
+<span style="color:#a6e22e">rep</span><span style="color:#a6e22e">eats</span> <span style="color:#ae81ff">8</span> <span style="color:#66d9ef">times</span> <span style="color:#960050;background-color:#1e0010">{</span>
+<span style="color:#960050;background-color:#1e0010">2455</span>           <span style="color:#a6e22e">add</span>    <span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">R5</span>, <span style="color:#66d9ef">R4</span>
+<span style="color:#960050;background-color:#1e0010">8410</span>           <span style="color:#a6e22e">swpb</span>   <span style="color:#66d9ef">R4</span>
+<span style="color:#960050;background-color:#1e0010">36</span><span style="color:#a6e22e">E5</span>           <span style="color:#66d9ef">xor</span>    <span style="color:#960050;background-color:#1e0010">@</span><span style="color:#66d9ef">R5</span><span style="color:#960050;background-color:#1e0010">+</span>, <span style="color:#66d9ef">R6</span>
+<span style="color:#960050;background-color:#1e0010">06</span><span style="color:#a6e22e">E4</span>           <span style="color:#66d9ef">xor</span>    <span style="color:#66d9ef">R4</span>, <span style="color:#66d9ef">R6</span>
+<span style="color:#960050;background-color:#1e0010">04</span><span style="color:#a6e22e">E6</span>           <span style="color:#66d9ef">xor</span>    <span style="color:#66d9ef">R6</span>, <span style="color:#66d9ef">R4</span>
+<span style="color:#960050;background-color:#1e0010">06</span><span style="color:#a6e22e">E4</span>           <span style="color:#66d9ef">xor</span>    <span style="color:#66d9ef">R4</span>, <span style="color:#66d9ef">R6</span>
+<span style="color:#960050;background-color:#1e0010">}</span>
+
+<span style="color:#960050;background-color:#1e0010">3490</span> <span style="color:#a6e22e">B1FE</span>      <span style="color:#66d9ef">cmp</span>    <span style="color:#75715e">#0xfeb1, R4
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">0742</span>           <span style="color:#66d9ef">mov</span>    <span style="color:#66d9ef">SR</span>, <span style="color:#66d9ef">R7</span>
+<span style="color:#960050;background-color:#1e0010">0443</span>           <span style="color:#a6e22e">clr</span>    <span style="color:#66d9ef">R4</span>
+<span style="color:#960050;background-color:#1e0010">3690</span> <span style="color:#960050;background-color:#1e0010">9892</span>      <span style="color:#a6e22e">cmp</span>    <span style="color:#75715e">#0x9298, R6
+</span><span style="color:#75715e"></span><span style="color:#ae81ff">07</span><span style="color:#66d9ef">F2</span>           <span style="color:#66d9ef">and</span>    <span style="color:#66d9ef">SR</span>, <span style="color:#66d9ef">R7</span>
+<span style="color:#a6e22e">...</span></code></pre></div>
+<p>That&rsquo;s very reasonable. I was able to convert this to python easily:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">r4 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+r6 <span style="color:#f92672">=</span> <span style="color:#ae81ff">0</span>
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">8</span>):
+    r4 <span style="color:#f92672">=</span> (r4 <span style="color:#f92672">+</span> u16(s[i<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span>:i<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span><span style="color:#f92672">+</span><span style="color:#ae81ff">2</span>]) <span style="color:#f92672">&amp;</span> <span style="color:#ae81ff">0xFFFF</span>)
+    r4 <span style="color:#f92672">=</span> swpb(r4)
+    r6 <span style="color:#f92672">^=</span> u16(s[i<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span>:i<span style="color:#f92672">*</span><span style="color:#ae81ff">2</span><span style="color:#f92672">+</span><span style="color:#ae81ff">2</span>])
+    r4, r6 <span style="color:#f92672">=</span> r6, r4</code></pre></div>
+<p>I tried bruteforcing this, but with a 16 byte input this was not happening. Time for z3!</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-python" data-lang="python">password <span style="color:#f92672">=</span> [BitVec(<span style="color:#e6db74">&#34;s0&#34;</span>, <span style="color:#ae81ff">16</span>), BitVec(<span style="color:#e6db74">&#34;s1&#34;</span>, <span style="color:#ae81ff">16</span>), BitVec(<span style="color:#e6db74">&#34;s2&#34;</span>, <span style="color:#ae81ff">16</span>), BitVec(<span style="color:#e6db74">&#34;s3&#34;</span>, <span style="color:#ae81ff">16</span>),
+            BitVec(<span style="color:#e6db74">&#34;s4&#34;</span>, <span style="color:#ae81ff">16</span>), BitVec(<span style="color:#e6db74">&#34;s5&#34;</span>, <span style="color:#ae81ff">16</span>), BitVec(<span style="color:#e6db74">&#34;s6&#34;</span>, <span style="color:#ae81ff">16</span>), BitVec(<span style="color:#e6db74">&#34;s7&#34;</span>, <span style="color:#ae81ff">16</span>)]
+r4 <span style="color:#f92672">=</span> BitVecVal(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">16</span>)
+r6 <span style="color:#f92672">=</span> BitVecVal(<span style="color:#ae81ff">0</span>, <span style="color:#ae81ff">16</span>)
+<span style="color:#66d9ef">for</span> i <span style="color:#f92672">in</span> range(<span style="color:#ae81ff">8</span>):
+    r4 <span style="color:#f92672">=</span> r4 <span style="color:#f92672">+</span> password[i]
+    r4 <span style="color:#f92672">=</span> RotateRight(r4, <span style="color:#ae81ff">8</span>)
+    r6 <span style="color:#f92672">^=</span> password[i]
+    r4, r6 <span style="color:#f92672">=</span> r6, r4
+
+solver <span style="color:#f92672">=</span> Solver()
+
+<span style="color:#75715e"># Add constraints</span>
+solver<span style="color:#f92672">.</span>add(r4 <span style="color:#f92672">==</span> <span style="color:#ae81ff">0xfeb1</span>)
+solver<span style="color:#f92672">.</span>add(r6 <span style="color:#f92672">==</span> <span style="color:#ae81ff">0x9298</span>)
+
+<span style="color:#75715e"># Solve</span>
+solver<span style="color:#f92672">.</span>check()
+m <span style="color:#f92672">=</span> solver<span style="color:#f92672">.</span>model()</code></pre></div>
+<p>Then simply converting the solution from 8 16-bit integers to a byte string, and submitting that, I was treated to that delicious win.</p>
+
+  </div>
+</section>
+<section id="tag-pane" class="row meta">
+  
+  <div class="col-md-12">
+    <h6 class="text-right meta">
+      
+    </h6>
+  </div>
+  
+</section>
+
+
+
+
+
+
+
+
+<section id="menu-pane" class="row menu text-center">
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2018-05-06-plaid2018-coconut/">&lt; prev | </a></span>
+  
+  
+  <span><a class="menu-item" href="/posts">posts</a></span>
+  
+  
+  <span><a class="menu-item" href="https://grazfather.github.io/posts/2019-12-08-glitcher/"> | next &gt;</a></span>
+  
+  
+  <h4 class="text-center"><a class="menu-item" href="https://grazfather.github.io">home</a></h4>
+</section>
+
+
+
+<footer class="row text-center footer">
+  <hr />
+  
+  <h6 class="text-center copyright"></h6>
+  
+      
+      <h6><a href="" aria-label="RSS Feed"><i class="fas fa-rss" aria-hidden="true"></i></a></h6>
+    
+  
+</footer>
+
+</div>
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  
+
+<script type="text/javascript">
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="js/main.js"></script>
+<script src="js/custom.js"></script>
+</body>
+</html>
+
+

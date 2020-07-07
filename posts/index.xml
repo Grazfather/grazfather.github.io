@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Posts on Grazfather</title>
+    <link>https://grazfather.github.io/posts/</link>
+    <description>Recent content in Posts on Grazfather</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Sun, 08 Dec 2019 12:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://grazfather.github.io/posts/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Glitching the Olimex LPC-P1343</title>
+      <link>https://grazfather.github.io/posts/2019-12-08-glitcher/</link>
+      <pubDate>Sun, 08 Dec 2019 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2019-12-08-glitcher/</guid>
+      <description>Back in the summer I was lucky enough to finagle my boss into letting me take Dmitry Nedospasov (@nedos)&amp;rsquo;s hardware hacking training. In it I cut my teeth on using an FPGA to interface with target hardware. After implementing a UART we implemented a module that could parse part of Apple&amp;rsquo;s OneWire, used to negotiate power exchange, among other things, with your iPhone over the lightning cable. Our &amp;lsquo;final project&amp;rsquo; was to build a UART-controllable glitcher, using it to try to glitch a development board.</description>
+    </item>
+    
+    <item>
+      <title>Microcorruption Hollywood</title>
+      <link>https://grazfather.github.io/posts/2018-11-24-microcorruption-hollywood/</link>
+      <pubDate>Sat, 24 Nov 2018 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2018-11-24-microcorruption-hollywood/</guid>
+      <description>I&amp;rsquo;m a few years late to the party here, but I&amp;rsquo;ve recently managed to finish Microcorruption. I had finished most of the challenges back in 2014, when they were released, but not having IDA back then, I was stumped when the first challenge that relocated showed up, because it broke the online disassembler, and I was helpless without it :).
+I recently took another look, having picked up some skill and knowledge in the intervening years.</description>
+    </item>
+    
+    <item>
+      <title>Plaid CTF 2018 coconut</title>
+      <link>https://grazfather.github.io/posts/2018-05-06-plaid2018-coconut/</link>
+      <pubDate>Sun, 06 May 2018 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2018-05-06-plaid2018-coconut/</guid>
+      <description>First we&amp;rsquo;re given an address to connect to. Upon connecting with nc we see a bunch of (AT&amp;amp;T 🤮) x86_64 assembly, and we are told to delete lines to get under a certain threshold without changing the return value. Easy enough! I backtrack from the last write to eax and trace back until I see its final immediate value being written to the stack. Submit those lines, easy flag.
+Let&amp;rsquo;s look at an example:</description>
+    </item>
+    
+    <item>
+      <title>Plaid CTF 2018 macsh</title>
+      <link>https://grazfather.github.io/posts/2018-05-06-plaid2018-macsh/</link>
+      <pubDate>Sun, 06 May 2018 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2018-05-06-plaid2018-macsh/</guid>
+      <description>For this challenge we&amp;rsquo;re given a network address where we can access what looks like a simple shell, and the source code to this shell, which is thankfully python code.
+Looking at macsh.py we see a set of commands, some of which are privileged. We can echo without privilege, and tag. What&amp;rsquo;s tag?
+Looking at the tag implementation, it looks like it creates and prints the MAC of the specified args, as long as the args don&amp;rsquo;t start with a priveleged command.</description>
+    </item>
+    
+    <item>
+      <title>RHME3 Quals - Whitebox</title>
+      <link>https://grazfather.github.io/posts/2017-09-03-rhme3-quals-whitebox/</link>
+      <pubDate>Sun, 03 Sep 2017 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2017-09-03-rhme3-quals-whitebox/</guid>
+      <description>Crypto is certainly not my specialty but this is an &amp;lsquo;automotive ctf&amp;rsquo;, and working in the industry it became a pride point for me to solve this.
+You&amp;rsquo;re provided a binary that reads 16 bytes of input and encrypts it with a hardcoded key. It doesn&amp;rsquo;t take a lot of looking at it to recognize that it&amp;rsquo;s (probably) AES. You can, for example, provide shorter input and see that the output is 16 bytes regardless, or change only one byte and see that the entire output changes, to prove that it&amp;rsquo;s a block cipher.</description>
+    </item>
+    
+    <item>
+      <title>My Reading Summary - November-December 2016</title>
+      <link>https://grazfather.github.io/posts/2017-08-15-reading-nov-dec-2016/</link>
+      <pubDate>Tue, 15 Aug 2017 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2017-08-15-reading-nov-dec-2016/</guid>
+      <description>Game Hacking - I was really excited by this book, since game hacking is a big part of how I got into reverse engineering. I even pre-ordered it and submitted a bunch of corrections in the pre-release (Some of which was not corrected, which is interesting&amp;hellip;). Overall this book was disappointing, and I think my high hopes were based on the publisher. I was hoping for a book similar to Practical Malware Analysis, with high quality exercises, and matching writeups of every single exercise.</description>
+    </item>
+    
+    <item>
+      <title>My Reading Summary - September-October 2016</title>
+      <link>https://grazfather.github.io/posts/2017-01-22-reading-sept-oct-2016/</link>
+      <pubDate>Sun, 22 Jan 2017 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2017-01-22-reading-sept-oct-2016/</guid>
+      <description>The Return of the King - While I didn&amp;rsquo;t enjoy this one quite as much as I did The Two Towers, I still enjoyed it a lot. Yes again I was surprised by how much Peter Jackson left out of the films. Of note, the books goes on for a good handful of pages beyond where Sam and Frodo reunite with the rest of the fellowship: They return to The Shire to find that a lot has changed.</description>
+    </item>
+    
+    <item>
+      <title>Qiwi CTF 2016 - RE300_3</title>
+      <link>https://grazfather.github.io/posts/2016-11-18-qiwictf-re300_3/</link>
+      <pubDate>Fri, 18 Nov 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-11-18-qiwictf-re300_3/</guid>
+      <description>This challenge provided task.bin an ELF.
+task.bin: ELF 32-bit LSB executable, Atmel AVR 8-bit, version 1 (SYSV), statically linked, not stripped Whoa! AVR! Lucky for us it&amp;rsquo;s 1. an ELF and 2. not stripped.
+Popping it into IDA and manually selecting &amp;ldquo;Atmel AVR&amp;rdquo; as the CPU I was happy to see demangled C++ function names as well as global symbols. Looking at the globals there were a few of note: i, int_recorded, buttonState, and Serial.</description>
+    </item>
+    
+    <item>
+      <title>Manual Unpacking</title>
+      <link>https://grazfather.github.io/posts/2016-11-06-manual-unpacking/</link>
+      <pubDate>Sun, 06 Nov 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-11-06-manual-unpacking/</guid>
+      <description>While packers&amp;rsquo; original intention is to minimize the size of a binary, they are often used today as an &amp;lsquo;easy&amp;rsquo; form of obfuscation, making us reverse engineers&amp;rsquo; lives more difficult. In order to get around them it&amp;rsquo;s important to understand how they work in practice first.
+Since writing an application that is intended to be packed is a pain the ass, packing is usually done as a separate step, and most packers can work basically agnostic of the content of what it&amp;rsquo;s packing.</description>
+    </item>
+    
+    <item>
+      <title>Obfuscation Techniques</title>
+      <link>https://grazfather.github.io/posts/2016-10-12-obfuscation-techniques/</link>
+      <pubDate>Wed, 12 Oct 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-10-12-obfuscation-techniques/</guid>
+      <description>I don&amp;rsquo;t know where I got these notes from, but I found them on my evernote and I thought they were worth exporting here.
+Data-based obfuscation  Constant Unfolding  A compiler would do something like replace x = 4 * 5 with x = 20. This does the opposite.  e.g. push 0F9CBE47ah, add dword ptr [esp], 6341B86h. This is effectively push 0h.     Dead Code Insertion  Simply add code that has no effect but wastes the reverse engineer&amp;rsquo;s time.</description>
+    </item>
+    
+    <item>
+      <title>Anti-Debugging Techniques and Mitigation</title>
+      <link>https://grazfather.github.io/posts/2016-09-18-anti-debugging/</link>
+      <pubDate>Sun, 18 Sep 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-09-18-anti-debugging/</guid>
+      <description>Techniques   Windows
+ API methods:  IsDebuggerPresent CheckRemoteDebuggerPresent NtQueryInformationProcess OutputDebugString/GetLastError   Manually checking structures  Check BeingDebugged in PEB (in fs:[30]). Check ForceFlags:  In fs:[30][18][10] on Windows XP. In fs:[30][18][44] on Windows 7 32 bit.   Check Flags:  In fs:[30][18][0C] on Windows XP. In fs:[30][18][40] on Windows 7 32 bit.   Check NTGlobalFlag at fs:[30][68] == 0x70. Look for debuggers specifically:  Check registry.</description>
+    </item>
+    
+    <item>
+      <title>Anti-Disassembly Techniques and Mitigation</title>
+      <link>https://grazfather.github.io/posts/2016-09-18-anti-disassembly/</link>
+      <pubDate>Sun, 18 Sep 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-09-18-anti-disassembly/</guid>
+      <description>This is just a small collection of notes about disassembly and anti-disassembly tricks, and how to get around them.
+How disassemblers work The simplest disassembler is super simple, but they can also be very complicated. More advanced disassemblers try to recognize things like functions (which may have multiples returns), idioms like jump tables, and not get tricked by anti-disassembly tricks. They come in two general categories.
+ Linear - Dissassembles all instructions in order, starting from some point (usually the entry point of a binary).</description>
+    </item>
+    
+    <item>
+      <title>My Reading Summary - June-August 2016</title>
+      <link>https://grazfather.github.io/posts/2016-09-01-reading-june-august-2016/</link>
+      <pubDate>Thu, 01 Sep 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-09-01-reading-june-august-2016/</guid>
+      <description>Wool Omnibus (Audiobook) - I picked this up because it was something like $3. I had already read the original Wool a few times and enjoyed it, and I enjoyed this one as much. This book takes place in an underground silo where a group of people has lived for generations. Their only view to the outside world is through a camera that points to the bleak post-apocalyptic world outside. The dust builds up on the lens, however, so it must be cleaned (with wool pads, where the book gets its name), so they send out their criminals (which is a death sentence).</description>
+    </item>
+    
+    <item>
+      <title>CTF(x) - Binary 250 - Dat Boinary</title>
+      <link>https://grazfather.github.io/posts/2016-08-28-ctfx-dat-boinary/</link>
+      <pubDate>Sun, 28 Aug 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-08-28-ctfx-dat-boinary/</guid>
+      <description>For this challenge we&amp;rsquo;re provided the binary and a libc.so.6 binary. Just by being provided this second binary we are hinted that we will need some fuctionality from it: Rop or ret2libc probably.
+[grazfather ~/code/CTFs/ctfx]$ file dat-boinary dat-boinary: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), dynamically linked (uses shared libs), for GNU/Linux 2.6.32, not stripped I&amp;rsquo;ve recently bought the personal edition of Binary Ninja, and so will be using it for most of my static analysis.</description>
+    </item>
+    
+    <item>
+      <title>My Reading Summary - April-May 2016</title>
+      <link>https://grazfather.github.io/posts/2016-06-01-reading-april-may-2016/</link>
+      <pubDate>Wed, 01 Jun 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-06-01-reading-april-may-2016/</guid>
+      <description>The Willpower Instinct - I enjoyed this book a lot. I head of it while reviewing The Power of Habit, a book I read a few months ago (and didn&amp;rsquo;t particularly love). This book does it a lot better. More interesting, relevant facts (with citations), more actionable items, more engaging. While I felt that The Power of Habit was there to break habits (such as smoking or overeating), this book was better geared for picking up and keeping positive habits.</description>
+    </item>
+    
+    <item>
+      <title>Google CTF - Mobile 150 - Ill Intentions</title>
+      <link>https://grazfather.github.io/posts/2016-05-02-google-ctf-mobile-150-ill-intentions/</link>
+      <pubDate>Mon, 02 May 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-05-02-google-ctf-mobile-150-ill-intentions/</guid>
+      <description>The timing for this challenge was just about perfect for me. A new colleague of mine just last week did a presentation on smali basics and debugging Android Applications using IDA. Before that I had only done some of the most basic patches in smali and no real dynamic stuff other than with am or purpose-built apps.
+My process for an APK is pretty simple: Unzip, dex2jar, and apktool -d. This yields a .</description>
+    </item>
+    
+    <item>
+      <title>My Reading Summary - February-March 2016</title>
+      <link>https://grazfather.github.io/posts/2016-04-01-reading-february-march-2016/</link>
+      <pubDate>Fri, 01 Apr 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-04-01-reading-february-march-2016/</guid>
+      <description>Mastery: Robert Greene (Author of &amp;ldquo;48 Laws of Power&amp;rdquo;) uses examples of historical &amp;lsquo;masters&amp;rsquo; of their domain, such as Mozart, and well as more contemporary masters, such at Paul Graham. Apparently a lot of practice will make you good at something. Really though, I enjoyed this book a lot. Each chapter begins with a story from one of the masters, which focuses on a specific task that the author deems important in the quest for mastery, he then breaks down how the master succeeded in this and how it paid off, and then ends with a more direct summary of how you should apply it to your life.</description>
+    </item>
+    
+    <item>
+      <title>Boston Key Party - PWN 5 ‘Complex Calc’</title>
+      <link>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-complex-calc/</link>
+      <pubDate>Sun, 06 Mar 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-complex-calc/</guid>
+      <description>Taking a quick look at this binary, we see it&amp;rsquo;s almost idenfical to the &amp;lsquo;Simple Calc&amp;rsquo;. Testing my ROP chain on it, however, crashes in free: It looks like free(0) won&amp;rsquo;t fly anymore.
+To confirm that my ROP was still valid, I set a breakpoint on the call to free and manually wrote the pointer to the original buffer into RDI. With this, my ROP indeed did work and I could focus on passing the free call.</description>
+    </item>
+    
+    <item>
+      <title>Boston Key Party - PWN 5 ‘Simple Calc’</title>
+      <link>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/</link>
+      <pubDate>Sun, 06 Mar 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/</guid>
+      <description>Running strings we see this is a x86_64 binary statically compiled, which should make things a lot easier for us.
+vagrant@kali:/vagrant/ctfs/bostonkp2016$ file simplecalc simplecalc: ELF 64-bit LSB executable, x86-64, version 1 (GNU/Linux), statically linked, for GNU/Linux 2.6.24, BuildID[sha1]=0x0676a83cc38d2b9b20c612f4d7a19255eaa93b52, not stripped Running the application, with IDA open on the side to quickly get past any restriction, I see that this program simply takes some number of calculations and then for each it allows you to choose wish operation to perform and the two operands.</description>
+    </item>
+    
+    <item>
+      <title>Sharif CTF 2016 - RE100 ‘Android App’ Writeup</title>
+      <link>https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/</link>
+      <pubDate>Sun, 14 Feb 2016 15:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/</guid>
+      <description>This one I didn&amp;rsquo;t actually solve in time, because I spent too much time trying to a) Use frida and b) RE the args to the two import functions.
+Because I am a fan of Frida (first cutting my teeth on it during the 2015 Flare On challenge), I decided I would use it in lieu of a debugger for this challenge (I didn&amp;rsquo;t want to figure out the toolchain to get the lldb client running on my mac).</description>
+    </item>
+    
+    <item>
+      <title>Sharif CTF 2016 - RE150 ‘Serial’ Writeup</title>
+      <link>https://grazfather.github.io/posts/2016-02-06-sharif-ctf-re150-serial-writeup/</link>
+      <pubDate>Sat, 06 Feb 2016 17:04:23 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-02-06-sharif-ctf-re150-serial-writeup/</guid>
+      <description>Starting out as I always do, I ran file, strings, etc, then ran in my VM in gdb and opened the binary in IDA Pro. The first thing I noticed is that IDA can&amp;rsquo;t view main in graph mode &amp;ndash; They are likely jumping around weird to trick disassemblers.
+Looking in IDA, a few instruction into main there&amp;rsquo;s a jump back a few bytes, into the middle of another instruction &amp;ndash; suspicions confirmed.</description>
+    </item>
+    
+    <item>
+      <title>My Reading Summary - January 2016</title>
+      <link>https://grazfather.github.io/posts/2016-02-01-reading-january-2016/</link>
+      <pubDate>Mon, 01 Feb 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-02-01-reading-january-2016/</guid>
+      <description>A Game Plan for Life: The Power of Mentoring - This book was a recommendation from my brother, and I was hesitant to read it just because I had a huge book queue, and I don&amp;rsquo;t care about basketball. I was bored, though, on my flight home from Christmas vacation, so I cracked it open, and I am glad it did. John Wooden, the legendary UCLA basketkall coach, starts off talking about seven people whom he believes were important mentors in his life including some people whom he&amp;rsquo;s never met (like Abraham Lincoln).</description>
+    </item>
+    
+    <item>
+      <title>My Reading Summary - 2015</title>
+      <link>https://grazfather.github.io/posts/2016-01-01-reading-2015/</link>
+      <pubDate>Fri, 01 Jan 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-01-01-reading-2015/</guid>
+      <description>I intend to do these more frequently, but here’s a dump of the books I read last year.
+The Dinner - I don&amp;rsquo;t often read fiction, and I kind of wish I hadn&amp;rsquo;t wasted my time with this one. There&amp;rsquo;s a subtle twist that&amp;rsquo;s delivered pretty well, but over all I just don&amp;rsquo;t think it was interesting enough to make it worth a 300 page book.
+Gray Hat Python - The examples are a lot of fun and the author does a pretty good job explaining how everything works.</description>
+    </item>
+    
+  </channel>
+</rss>
