@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>notes on Grazfather</title>
+    <link>https://grazfather.github.io/tags/notes/</link>
+    <description>Recent content in notes on Grazfather</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Sun, 06 Nov 2016 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://grazfather.github.io/tags/notes/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Manual Unpacking</title>
+      <link>https://grazfather.github.io/posts/2016-11-06-manual-unpacking/</link>
+      <pubDate>Sun, 06 Nov 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-11-06-manual-unpacking/</guid>
+      <description>While packers&amp;rsquo; original intention is to minimize the size of a binary, they are often used today as an &amp;lsquo;easy&amp;rsquo; form of obfuscation, making us reverse engineers&amp;rsquo; lives more difficult. In order to get around them it&amp;rsquo;s important to understand how they work in practice first.
+Since writing an application that is intended to be packed is a pain the ass, packing is usually done as a separate step, and most packers can work basically agnostic of the content of what it&amp;rsquo;s packing.</description>
+    </item>
+    
+    <item>
+      <title>Obfuscation Techniques</title>
+      <link>https://grazfather.github.io/posts/2016-10-12-obfuscation-techniques/</link>
+      <pubDate>Wed, 12 Oct 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-10-12-obfuscation-techniques/</guid>
+      <description>I don&amp;rsquo;t know where I got these notes from, but I found them on my evernote and I thought they were worth exporting here.
+Data-based obfuscation  Constant Unfolding  A compiler would do something like replace x = 4 * 5 with x = 20. This does the opposite.  e.g. push 0F9CBE47ah, add dword ptr [esp], 6341B86h. This is effectively push 0h.     Dead Code Insertion  Simply add code that has no effect but wastes the reverse engineer&amp;rsquo;s time.</description>
+    </item>
+    
+  </channel>
+</rss>

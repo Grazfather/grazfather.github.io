@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>mobile on Grazfather</title>
+    <link>https://grazfather.github.io/tags/mobile/</link>
+    <description>Recent content in mobile on Grazfather</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Mon, 02 May 2016 12:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://grazfather.github.io/tags/mobile/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Google CTF - Mobile 150 - Ill Intentions</title>
+      <link>https://grazfather.github.io/posts/2016-05-02-google-ctf-mobile-150-ill-intentions/</link>
+      <pubDate>Mon, 02 May 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-05-02-google-ctf-mobile-150-ill-intentions/</guid>
+      <description>The timing for this challenge was just about perfect for me. A new colleague of mine just last week did a presentation on smali basics and debugging Android Applications using IDA. Before that I had only done some of the most basic patches in smali and no real dynamic stuff other than with am or purpose-built apps.
+My process for an APK is pretty simple: Unzip, dex2jar, and apktool -d. This yields a .</description>
+    </item>
+    
+  </channel>
+</rss>

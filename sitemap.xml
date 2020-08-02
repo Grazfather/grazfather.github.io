@@ -3,17 +3,12 @@
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   
   <url>
-    <loc>https://grazfather.github.io/categories/</loc>
+    <loc>https://grazfather.github.io/tags/electronics/</loc>
     <lastmod>2019-12-08T12:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>https://grazfather.github.io/categories/electronics/</loc>
-    <lastmod>2019-12-08T12:00:00+00:00</lastmod>
-  </url>
-  
-  <url>
-    <loc>https://grazfather.github.io/categories/fpga/</loc>
+    <loc>https://grazfather.github.io/tags/fpga/</loc>
     <lastmod>2019-12-08T12:00:00+00:00</lastmod>
   </url>
   
@@ -33,17 +28,22 @@
   </url>
   
   <url>
-    <loc>https://grazfather.github.io/categories/pwn/</loc>
+    <loc>https://grazfather.github.io/tags/pwn/</loc>
     <lastmod>2019-12-08T12:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>https://grazfather.github.io/categories/re/</loc>
+    <loc>https://grazfather.github.io/tags/re/</loc>
     <lastmod>2019-12-08T12:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>https://grazfather.github.io/categories/ctf/</loc>
+    <loc>https://grazfather.github.io/tags/</loc>
+    <lastmod>2019-12-08T12:00:00+00:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://grazfather.github.io/tags/ctf/</loc>
     <lastmod>2018-11-24T12:00:00+00:00</lastmod>
   </url>
   
@@ -53,7 +53,7 @@
   </url>
   
   <url>
-    <loc>https://grazfather.github.io/categories/crypto/</loc>
+    <loc>https://grazfather.github.io/tags/crypto/</loc>
     <lastmod>2018-05-06T12:00:00+00:00</lastmod>
   </url>
   
@@ -73,7 +73,7 @@
   </url>
   
   <url>
-    <loc>https://grazfather.github.io/categories/books/</loc>
+    <loc>https://grazfather.github.io/tags/books/</loc>
     <lastmod>2017-08-15T12:00:00+00:00</lastmod>
   </url>
   
@@ -98,7 +98,7 @@
   </url>
   
   <url>
-    <loc>https://grazfather.github.io/categories/notes/</loc>
+    <loc>https://grazfather.github.io/tags/notes/</loc>
     <lastmod>2016-11-06T00:00:00+00:00</lastmod>
   </url>
   
@@ -118,12 +118,12 @@
   </url>
   
   <url>
-    <loc>https://grazfather.github.io/categories/ida/</loc>
+    <loc>https://grazfather.github.io/tags/ida/</loc>
     <lastmod>2016-09-18T12:00:00+00:00</lastmod>
   </url>
   
   <url>
-    <loc>https://grazfather.github.io/categories/malware/</loc>
+    <loc>https://grazfather.github.io/tags/malware/</loc>
     <lastmod>2016-09-18T12:00:00+00:00</lastmod>
   </url>
   
@@ -153,7 +153,7 @@
   </url>
   
   <url>
-    <loc>https://grazfather.github.io/categories/mobile/</loc>
+    <loc>https://grazfather.github.io/tags/mobile/</loc>
     <lastmod>2016-05-02T12:00:00+00:00</lastmod>
   </url>
   
@@ -197,7 +197,7 @@
   </url>
   
   <url>
-    <loc>https://grazfather.github.io/tags/</loc>
+    <loc>https://grazfather.github.io/categories/</loc>
   </url>
   
 </urlset>

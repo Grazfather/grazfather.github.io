@@ -6,9 +6,109 @@
     <description>Recent content in Tags on Grazfather</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-US</language>
+    <lastBuildDate>Sun, 08 Dec 2019 12:00:00 +0000</lastBuildDate>
     
 	<atom:link href="https://grazfather.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     
+    
+    <item>
+      <title>electronics</title>
+      <link>https://grazfather.github.io/tags/electronics/</link>
+      <pubDate>Sun, 08 Dec 2019 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/tags/electronics/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>fpga</title>
+      <link>https://grazfather.github.io/tags/fpga/</link>
+      <pubDate>Sun, 08 Dec 2019 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/tags/fpga/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>pwn</title>
+      <link>https://grazfather.github.io/tags/pwn/</link>
+      <pubDate>Sun, 08 Dec 2019 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/tags/pwn/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>re</title>
+      <link>https://grazfather.github.io/tags/re/</link>
+      <pubDate>Sun, 08 Dec 2019 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/tags/re/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ctf</title>
+      <link>https://grazfather.github.io/tags/ctf/</link>
+      <pubDate>Sat, 24 Nov 2018 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/tags/ctf/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>crypto</title>
+      <link>https://grazfather.github.io/tags/crypto/</link>
+      <pubDate>Sun, 06 May 2018 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/tags/crypto/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>books</title>
+      <link>https://grazfather.github.io/tags/books/</link>
+      <pubDate>Tue, 15 Aug 2017 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/tags/books/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>notes</title>
+      <link>https://grazfather.github.io/tags/notes/</link>
+      <pubDate>Sun, 06 Nov 2016 00:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/tags/notes/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ida</title>
+      <link>https://grazfather.github.io/tags/ida/</link>
+      <pubDate>Sun, 18 Sep 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/tags/ida/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>malware</title>
+      <link>https://grazfather.github.io/tags/malware/</link>
+      <pubDate>Sun, 18 Sep 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/tags/malware/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>mobile</title>
+      <link>https://grazfather.github.io/tags/mobile/</link>
+      <pubDate>Mon, 02 May 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/tags/mobile/</guid>
+      <description></description>
+    </item>
     
   </channel>
 </rss>
