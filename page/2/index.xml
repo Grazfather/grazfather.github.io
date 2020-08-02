@@ -159,6 +159,19 @@
     
     
         <item>
+        <title>Practical Malware Analysis Labs</title>
+        <link>https://grazfather.github.io/posts/2016-09-11-practical-malware-analysis/</link>
+        <pubDate>Sun, 11 Sep 2016 12:00:00 +0000</pubDate>
+        
+        <guid>https://grazfather.github.io/posts/2016-09-11-practical-malware-analysis/</guid>
+        <description>Grazfather https://grazfather.github.io/posts/2016-09-11-practical-malware-analysis/ -&lt;p&gt;I owe &lt;a href=&#34;https://www.nostarch.com/malware&#34;&gt;Practical Malware Analysis&lt;/a&gt; for kickstarting my career in security. Before reading it (and getting into CTFs) I was working as an embedded systems developer, and then a developer at a bug bounty company.&lt;/p&gt;
+&lt;p&gt;PMA has got to be the &lt;em&gt;best&lt;/em&gt; technical book I&amp;rsquo;ve ever read. On the OpenToAll slack it&amp;rsquo;s the book I&amp;rsquo;m mostly likely to recommend, and that&amp;rsquo;s what I am doing here. I&amp;rsquo;ve worked through &lt;em&gt;every&lt;/em&gt; lab in the book, currently available on my &lt;a href=&#34;https://github.com/Grazfather/PracticalMalwareLabs&#34;&gt;github&lt;/a&gt;.&lt;/p&gt;
+- https://grazfather.github.io/posts/2016-09-11-practical-malware-analysis/ - </description>
+        </item>
+    
+    
+    
+        <item>
         <title>My Reading Summary - June-August 2016</title>
         <link>https://grazfather.github.io/posts/2016-09-01-reading-june-august-2016/</link>
         <pubDate>Thu, 01 Sep 2016 12:00:00 +0000</pubDate>
@@ -614,45 +627,6 @@ garbage &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; r&lt;span style
 r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;send(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;join(commands))
 r&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;interactive()&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
 - https://grazfather.github.io/posts/2016-03-06-bkp-pwn5-simple-calc/ - </description>
-        </item>
-    
-    
-    
-        <item>
-        <title>Sharif CTF 2016 - RE100 ‘Android App’ Writeup</title>
-        <link>https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/</link>
-        <pubDate>Sun, 14 Feb 2016 15:00:00 +0000</pubDate>
-        
-        <guid>https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/</guid>
-        <description>Grazfather https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/ -&lt;p&gt;This one I didn&amp;rsquo;t actually solve in time, because I spent too much time trying to a) Use &lt;a href=&#34;http://frida.re&#34;&gt;frida&lt;/a&gt; and b) RE the args to the two import functions.&lt;/p&gt;
-&lt;p&gt;Because I am a fan of Frida (first cutting my teeth on it during the 2015 Flare On challenge), I decided I would use it in lieu of a debugger for this challenge (I didn&amp;rsquo;t want to figure out the toolchain to get the lldb client running on my mac).&lt;/p&gt;
-&lt;p&gt;Starting with &lt;code&gt;dex2jar&lt;/code&gt; I took the apk apart and took a quick peek at the two main classes. They use JNI to call into two functions in the provided dynamic library, and then generate the flag based on result. Because one function seeds the Java code to generate the flag, and the other takes the same input, but only returns success, I spent almost no time in Java land and instead went directly into looking at the native code.&lt;/p&gt;
-&lt;p&gt;Loading up the library in IDA, I was a little intimidated because of the unfamiliar ISA and what looked like a parser. I decided to try to do this dynamically, so this is when I decided &lt;code&gt;frida-trace&lt;/code&gt; would be my friend.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://grazfather.github.io/assets/2016-02-14-Sharif-CTF-RE100-Android-App-1.png&#34; alt=&#34;No thanks&#34;&gt;&lt;/p&gt;
-&lt;p&gt;Setting up &lt;code&gt;frida&lt;/code&gt; is very straight forward:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;adb install Sharif_CTF.apk
-adb push frida-server /data/local/tmp
-adb shell
-su
-/data/local/tmp/frida-server&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;I could then instrument the application and play around with it.&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;frida-ps -U|grep ctf
-frida-trace -U -p &amp;lt;pid&amp;gt; -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;*isCorrect*&amp;#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;I spent &lt;em&gt;way&lt;/em&gt; more time than I would like to admit here, playing with &lt;code&gt;Memory.read&amp;lt;X&amp;gt;&lt;/code&gt; trying to read out the arguments and return value, but the problem was that this function is provided a Java string, whose structure I am unfamiliar with. Part of the complexity of the native functions are surely just getting the C string out of the &lt;code&gt;String&lt;/code&gt; object, but I didn&amp;rsquo;t feel like figuring that out.&lt;/p&gt;
-&lt;p&gt;If I wanted to see what was going on &lt;em&gt;easily&lt;/em&gt; I&amp;rsquo;d want to find a function that takes C strings, which are easy to read from. Lucky for me, the &lt;code&gt;isCorrect&lt;/code&gt; function imports &lt;code&gt;strcmp&lt;/code&gt; from &lt;em&gt;libc.so&lt;/em&gt;. It can&amp;rsquo;t be that easy&amp;hellip; can it?&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://grazfather.github.io/assets/2016-02-14-Sharif-CTF-RE100-Android-App-2.png&#34; alt=&#34;Calling strcmp&#34;&gt;&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;frida-trace -U -p &amp;lt;pid&amp;gt; -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;*strcmp*&amp;#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;Editing the created &lt;em&gt;strcmp.js&lt;/em&gt;:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-js&#34; data-lang=&#34;js&#34;&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;onEnter&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;:&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;function&lt;/span&gt; (&lt;span style=&#34;color:#a6e22e&#34;&gt;log&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;args&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;state&lt;/span&gt;) {
-    &lt;span style=&#34;color:#a6e22e&#34;&gt;log&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;strcmp(&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Memory&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;readUtf8String&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;args&lt;/span&gt;[&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;,&amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt;  &lt;span style=&#34;color:#a6e22e&#34;&gt;Memory&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;readUtf8String&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;args&lt;/span&gt;[&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;]) &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;)&amp;#34;&lt;/span&gt;);
-},
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;And then just hitting &amp;lsquo;Login&amp;rsquo; on the app:&lt;/p&gt;
-&lt;div class=&#34;highlight&#34;&gt;&lt;pre style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;  &lt;span style=&#34;color:#ae81ff&#34;&gt;2059&lt;/span&gt; ms  strcmp&lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;Serial Number,ef57f3fe3cf603c03890ee588878c0ec&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;
-&lt;p&gt;Now, remember that this isn&amp;rsquo;t the flag, but what is compared against to determine if we have the correct login. We could fake the retval from this function to return true, but that would make the flag generation fail. Instead, just enter &amp;lsquo;ef57f3fe3cf603c03890ee588878c0ec&amp;rsquo; into the prompt, which will be passed to both lib function, which should properly seed the Java code, and see the flag pop out.&lt;/p&gt;
-&lt;p&gt;&lt;img src=&#34;https://grazfather.github.io/assets/2016-02-14-Sharif-CTF-RE100-Android-App-3.png&#34; alt=&#34;Flag&#34;&gt;&lt;/p&gt;
-&lt;p&gt;flag: Sharif_CTF{833489ef285e6fa80690099efc5d9c9d}&lt;/p&gt;
-- https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/ - </description>
         </item>
     
     

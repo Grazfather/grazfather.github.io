@@ -132,6 +132,16 @@ How disassemblers work The simplest disassembler is super simple, but they can a
     </item>
     
     <item>
+      <title>Practical Malware Analysis Labs</title>
+      <link>https://grazfather.github.io/posts/2016-09-11-practical-malware-analysis/</link>
+      <pubDate>Sun, 11 Sep 2016 12:00:00 +0000</pubDate>
+      
+      <guid>https://grazfather.github.io/posts/2016-09-11-practical-malware-analysis/</guid>
+      <description>I owe Practical Malware Analysis for kickstarting my career in security. Before reading it (and getting into CTFs) I was working as an embedded systems developer, and then a developer at a bug bounty company.
+PMA has got to be the best technical book I&amp;rsquo;ve ever read. On the OpenToAll slack it&amp;rsquo;s the book I&amp;rsquo;m mostly likely to recommend, and that&amp;rsquo;s what I am doing here. I&amp;rsquo;ve worked through every lab in the book, currently available on my github.</description>
+    </item>
+    
+    <item>
       <title>My Reading Summary - June-August 2016</title>
       <link>https://grazfather.github.io/posts/2016-09-01-reading-june-august-2016/</link>
       <pubDate>Thu, 01 Sep 2016 12:00:00 +0000</pubDate>
