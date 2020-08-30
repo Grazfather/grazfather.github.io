@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html><head>
-<title>Sharif CTF 2016 - RE150 ‘Serial’ Writeup</title>
+<title>Now</title>
 
 
 
@@ -81,9 +81,11 @@
             
             
             
+                
             
             
-            <a class="a-block nav-link-item false" href="/now/">
+            
+            <a class="a-block nav-link-item active" href="/now/">
                 now
             </a>
             
@@ -91,11 +93,9 @@
             
             
             
-                
             
             
-            
-            <a class="a-block nav-link-item active" href="/posts/">
+            <a class="a-block nav-link-item false" href="/posts/">
                 posts
             </a>
             
@@ -184,9 +184,11 @@ Ported from <a href="https://mak1t0.cc/" target="_blank" rel="noreferrer noopene
                 
                 
                 
+                    
                 
                 
-                <a class="a-block drawer-menu-item false" href="/now/">
+                
+                <a class="a-block drawer-menu-item active" href="/now/">
                     now
                 </a>
                 
@@ -194,11 +196,9 @@ Ported from <a href="https://mak1t0.cc/" target="_blank" rel="noreferrer noopene
                 
                 
                 
-                    
                 
                 
-                
-                <a class="a-block drawer-menu-item active" href="/posts/">
+                <a class="a-block drawer-menu-item false" href="/posts/">
                     posts
                 </a>
                 
@@ -288,26 +288,13 @@ Ported from <a href="https://mak1t0.cc/" target="_blank" rel="noreferrer noopene
                 
             >
                 <div class="post-title">
-                    Sharif CTF 2016 - RE150 ‘Serial’ Writeup
+                    Now
                     
                     <div class="post-meta">
                         
-                        <time itemprop="datePublished">
-                            2016-02-06 17:04
-                        </time>
-                        
 
                         
 
-                        
-                            <i class="material-icons" style="">label</i>
-                            
-                                <a href="/tags/ctf">ctf</a>
-                                &nbsp;
-                            
-                                <a href="/tags/re">re</a>
-                                &nbsp;
-                            
                         
                         
                     </div>
@@ -318,31 +305,9 @@ Ported from <a href="https://mak1t0.cc/" target="_blank" rel="noreferrer noopene
                 
                 <div class="post-body" v-pre>
                 
-                    <p>Starting out as I always do, I ran <code>file</code>, <code>strings</code>, etc, then ran in my VM in <code>gdb</code> and opened the binary in IDA Pro. The first thing I noticed is that IDA can&rsquo;t view main in graph mode &ndash; They are likely jumping around weird to trick disassemblers.</p>
-<p>Looking in IDA, a few instruction into main there&rsquo;s a jump <em>back</em> a few bytes, into the middle of another instruction &ndash; suspicions confirmed. That&rsquo;s no problem. Hit <code>D</code> on the instruction that overlaps with the jump target to turn the code into data, move to the correct byte, and then hit <code>C</code> to start disassembling from there.</p>
-<p><img src="/assets/2016-02-06-Sharif-CTF-RE150-Serial-1.png" alt="before"></p>
-<p>Becomes&hellip;</p>
-<p><img src="/assets/2016-02-06-Sharif-CTF-RE150-Serial-2.png" alt="after"></p>
-<p>That makes more sense, but there&rsquo;s another jump into the middle of some instructions. You&rsquo;ll find this a lot in this binary, but you can just keep hitting <code>D</code> and <code>C</code> to fix it up. Since the jumps go backwards, you&rsquo;ll be disassembling &lsquo;over&rsquo; some of the jumps, but because they&rsquo;re only there to confuse you, you can pretty much just follow the code straight down.</p>
-<p>After doing that cleanup twice we see a reference to the first string we see &ldquo;Please Enter the valid key!\n&rdquo;.</p>
-<p>Continuing to clean as you proceed down, there&rsquo;s a call to <code>strlen</code> ensuring the length is 16 bytes. I like to put breakpoints on checks like these and restart the program to validate, but otherwise do most of my work statically.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">b *0x400A2C
-r
-<span style="color:#ae81ff">123456</span>
-<span style="color:#75715e"># bp is hit, ensure it doesn&#39;t jump</span>
-r <span style="color:#75715e"># restart</span>
-<span style="color:#ae81ff">1234567890123456</span>
-<span style="color:#75715e"># bp is hit, make sure it jumps</span></code></pre></div>
-<p><img src="/assets/2016-02-06-Sharif-CTF-RE150-Serial-3.png" alt="char compare"></p>
-<p>The rest of the check is straight forward: It checks that the <em>x</em>th byte is some hard code value, and then checks that the value of the <em>x</em>th byte <em>from the back</em>, plus the <em>x</em>th byte adds up to some other hardcoded value. You can hit <code>R</code> on the byte values to see the ASCII representation, but this won&rsquo;t work on the back half checks, because the two characters&rsquo; sums aren&rsquo;t likely still in the ASCII range. After 8 of these double checks you should have what you need.</p>
-<p>flag: EZ9dmq4c8g9G7bAV</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">vagrant@kali:/vagrant$ echo EZ9dmq4c8g9G7bAV | ./serial
-Please Enter the valid key!
-Serial number is valid :<span style="color:#f92672">)</span></code></pre></div>
+                    <p>I&rsquo;m currently dedicating more time to some hobbies. Notably playing with FPGAs, cooking, reading, and focusing on meta-learning.</p>
+<p>I&rsquo;ve stepped back from playing CTFs, though I still help (where I can) with OpenToAll.</p>
 
-                    
-                    <HR width="100%" id="EOF">
-		    <p style="color:#777;">Last modified on 2016-02-06</p>
                     
                 </div>
             </div>
@@ -351,14 +316,14 @@ Serial number is valid :<span style="color:#f92672">)</span></code></pre></div>
             <nav class="post-pagination">
 
                 
-                <a class="newer-posts" href="https://grazfather.github.io/posts/2016-02-14-sharif-ctf-re100-android-app-writeup/">
-			Next<br>Sharif CTF 2016 - RE100 ‘Android App’ Writeup
+                <a class="newer-posts" href="https://grazfather.github.io/about/">
+			Next<br>About
                 </a>
                 
                 
                 
-                <a class="older-posts" href="https://grazfather.github.io/posts/2016-02-01-reading-january-2016/">
-			Previous<br>My Reading Summary - January 2016
+                <a class="older-posts">
+			Previous<br>No older posts.
                 </a>
                 
             </nav>
